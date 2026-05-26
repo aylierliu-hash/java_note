@@ -911,9 +911,7 @@ void main() {
 
 ### 题目改进4：添加和遍历
 
-![题目要求](C:\Users\Aylier\AppData\Roaming\Typora\typora-user-images\image-20260526133632272.png)
-
-
+![题目要求](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260526143808360.png)
 
 
 
