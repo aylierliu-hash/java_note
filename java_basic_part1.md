@@ -4,11 +4,51 @@
 
 ![课程目录](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260527131427455.png)
 
-![课程时长](C:\Users\Aylier\AppData\Roaming\Typora\typora-user-images\image-20260527131500065.png)
+![课程时长](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260527131500065.png)
 
 
 
 # Day01-Java入门
+
+## Java学习介绍
+
+1. OOP
+2. Java核心知识点
+   1. API
+   2. 集合
+   3. BIO
+   4. NIO
+   5. 多线程
+   6. 网络编程
+3. 斯坦福大学真题练习
+4. 阿里巴巴的编码规范
+5. 手写Tomcat服务器，虚拟机，算法，数据结构
+6. 老师多年经验心得
+
+## 人机交互
+
+### 人机交互小故事
+
+只有命令行
+
+MS-DOS
+
+XEROX-->图形化界面
+
+但是图形化界面
+
+- 消耗内存
+- 运行速度慢
+
+### 打开CMD
+
+`win+r`
+
+`cmd`
+
+### 常用CMD命令
+
+#### 盘符名称+冒号
 
 
 
