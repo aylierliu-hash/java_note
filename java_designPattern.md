@@ -61,7 +61,41 @@ Class Diagram
 - 特别是模型中的类、类的内部结构及其与其他类的关系
 - 不显示暂时性信息
 
+### 类图的作用
 
+- 是静态的结构图，描述了系统类的集合、类的属性及类之间的关系
+- 类图是系统分析和设计阶段的重要产物，
+- 是系统编码测试的重要模型
+
+### 类图的表示法
+
+#### 类的表示方法
+
+![类图中类的表示法](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260527135756381.png)
+
+![各个部分的表示方法](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260527135913165.png)
+
+#### 类与类、类与接口之间关系的表达方式
+
+##### 关联关系（一般）
+
+- 对象之间的一种引用关系
+- 例如老师学生，
+- 关联关系分为：一般关联关系、聚合关系和组合关系
+
+  > 这里先讲一般关联关系，聚合和组合关系后面单独拎出来讲
+
+一般的关联关系可以分为：
+
+1. 单向关联
+
+   ![单向关联](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260527140343872.png)
+
+2. 双向关联
+
+   
+
+3. 自关联
 
 # 创建者模式
 
