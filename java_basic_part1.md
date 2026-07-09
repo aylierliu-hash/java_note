@@ -1034,7 +1034,7 @@ public class Student {
 
 ```
 
-```
+```java
 package com.itheima.test2_5;
 
 /**
@@ -1244,48 +1244,532 @@ String name = "AylerLiu";
 
 #### `new`（显示调用构造方法）
 
-| 构造方法                         | 说明 |
-| :------------------------------- | :--: |
-| `public String()`                |      |
-| `public String(String original)` |      |
-|                                  |      |
-|                                  |      |
+| 构造方法                         |              说明              |
+| :------------------------------- | :----------------------------: |
+| `public String()`                | 创建空白字符串，不包含任何内容 |
+| `public String(String original)` |  根据传入字符串创建字符串对象  |
+| `public String (char[] chs)`     | 根据*字符数组*，创建字符串对象 |
+| `public String(byte[] chs)`      | 根据*字节数组*，创建字符串对象 |
+
+重点记忆最后两种：分别在修改字符串和网络信息转换中有应用
+
+```java
+package com.itheima.stringDemo;
+
+public class StringDemo1 {
+    public static void main(String[] args) {
+        //方法1
+        String str1 = "hello";
+        System.out.println(str1);
+
+        //方法2
+        //2.1空参构造
+        String str2 = new String();
+        System.out.println("@" + str2+"@");
+
+        //2.2有参构造
+        //字符串创建字符串
+        String str3 = new String("hello");
+        System.out.println(str3);
+
+        //字符数组创建字符串
+        //应用：便于修改字符串的内容
+        //因为字符串是不可变的，所以不能直接修改字符串的内容
+        //但是可以将字符串转换为字符数组，修改字符数组的内容，再将字符数组转换为字符串
+        char[] chars = {'h','e','l','l','o'};
+        String str4 = new String(chars);
+        System.out.println(str4);
+
+        //字节数组创建字符串
+        //应用：网络中传输的数据一般都是字节信息
+        //将字节数组转换为人能读的字符串，就要用到这个构造方法了
+        byte[] bytes = {104,101,108,108,111};
+        String str5 = new String(bytes);
+        System.out.println(str5);
+    }
+}
+
+```
+
+##### 补充说明1：最后一种字节数组转字符串的实现相关
+
+首先`byte`存的是整数数字，范围`-127~128`
+
+由于字符`char`本质上也是整数，所以可以用字符来给`byte`赋值，但是有条件：
+
+1. 字符对应的编码在`byte`的范围内
+2. 给`byte`赋值的是编译期常量或者经过强制类型转换的变量
+   1. 编译期常量包括：字面量`‘A’`，已赋值的`final`常量
+      1. 未赋值的final常量叫空白final,，不属于编译期常量
+   2. 普通的变量是无法赋值给`char`的，因为变量的值在运行期才能知道，也就是说，即使用来赋值的变量也是整型（比如`int`），但是由于不知道该变量的值是不是在`byte`取值范围内，所以编译器不放行；加了强制转化`(byte)`就允许放行
+
+字节数组转换为字符串的过程：
+
+1. 根据指定的字符集（比如UTF-8），将字节数组解码成`Unicode码点`
+   1. `Unicode码点`：就是字符在字符集中的唯一编码
+      1. 大写字母 A 的码点是 U+0041（十进制是 65）。
+      2. 汉字 中 的码点是 U+4E2D（十进制是 20013）。
+      3. 笑脸符号 😀 的码点是 U+1F600（十进制是 128512）。
+2. 将码点填充到`char[]`中
+3. 再用`char[]`构造`String`
+
+##### 补充说明2：如何输出笑脸
+
+码点超过 `U+FFFF` 的字符（如 Emoji）在 Java 中需要用 **代理对（Surrogate Pair）** 表示，即两个 `char` 的组合。
+
+| Emoji | Unicode 码点（十六进制） | Java 写法（代理对）      |
+| :---- | :----------------------- | :----------------------- |
+| 😊     | U+1F60A                  | `"\uD83D\uDE0A"`         |
+| 😂     | U+1F602                  | `"\uD83D\uDE02"`         |
+| 🥳     | U+1F973                  | `"\uD83E\uDD73"`         |
+| ❤️     | U+2764 (U+FE0F)          | `"\u2764\uFE0F"`（可选） |
+
+```java
+public class Test {
+    public static void main(String[] args) {
+        System.out.println("\uD83D\uDE0A");   // 😊
+        System.out.println("\uD83D\uDE02");   // 😂
+        System.out.println("\uD83E\uDD73");   // 🥳
+    }
+}
+```
 
 
 
+### 字符串的内存
+
+ ####  直接赋值的字符串的内存
+
+直接赋值方式创建的字符串，会放在`StringTable(串池)`中![直接赋值的字符串的内存](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260708162102925.png)
+
+在创建的时候，会先检查串池中是否已存在该字符串，不存在则创建新的，存在则==复用==，节约内存
+
+#### new创建的字符串
+
+![new创建的字符串的内存](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260709111501100.png)
+
+不存在复用，相对浪费内存，建议使用第一种方法
+
+###  `String`的常用方法
+
+#### `String`的比较
+
+##### 不能用`==`进行比较
+
+`==`号比较的是变量的中具体存的东西
+
+- 基本数据类型：比较的就是数据值
+- 引用数据类型：比较的就是地址值
+
+```java
+package com.itheima.stringDemo;
+
+public class StringCompareDemo1 {
+    static void main(String[] args) {
+        //直接赋值创建的字符串
+        String str1 = "abc";
+        String str2 = "abc";
+        System.out.println(str1 == str2);//true
+
+        //通过new关键字创建的字符串
+        String str3 = new String("abc");
+        String str4 = new String("abc");
+        System.out.println(str3 == str4);//false
+
+        //同理，不同创建方法创建的字符串，其地址值也不相等
+        System.out.println(str3 == str4);//false
+    }
+}
+
+```
+
+##### `String`的比较方法
+
+| 字符串的比较方法                   |            |
+| ---------------------------------- | ---------- |
+| `boolean equals(String)`           | 完全一样   |
+| `boolean equalsIgnoreCase(String)` | 忽略大小写 |
+
+```java
+package com.itheima.stringDemo;
+
+public class StringDemo2 {
+    static void main(String[] args) {
+        String str1 = "abc";
+        String str2 = new String("abc");
+        String str3 = "ABC";
+
+        //equals方法比较字符串的内容是否相等
+        System.out.println(str1.equals(str2));//true
+        System.out.println(str1.equals(str3));//false
+
+        //equalsIgnoreCase方法比较字符串的内容是否相等，不区分大小写
+        System.out.println(str1.equalsIgnoreCase(str2));//true
+        System.out.println(str2.equalsIgnoreCase(str3));//true
+    }
+}
+
+```
 
 
 
+补充一点：键盘录入`Scanner`的字符串是`new`出来的，所以比较字符串还是建议使用`equals()`方法
+
+```java
+package com.itheima.stringDemo;
+
+import java.util.Scanner;
+
+public class StringDemo3 {
+    static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        String str1 = sc.next();//键盘录入abc
+
+        String str2 = "abc";
+
+        System.out.println(str1 == str2);//false
+    }
+}
+
+```
+
+------
+
+##### 小练习
+
+![字符串的比较练习1](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260709162949502.png)
+
+```java
+package com.itheima.stringDemo;
+
+import java.util.Scanner;
+
+/**
+用户登录
+需求:已知正确的用户名和密码，请用程序实现模拟用户登录。总共给三次机会，登录之后，给出相应的提示
+**/
+public class StringDemo4 {
+    public static void main(String[] args) {
+        String rightUsername = "admin";
+        String rightPassword = "123";
+
+        Scanner sc = new Scanner(System.in);
+        for (int i = 0; i < 3; i++) {
+            System.out.println("请输入用户名:");
+            String username = sc.nextLine();
+            System.out.println("请输入密码:");
+            String password = sc.nextLine();
+            if (username.equals(rightUsername) && password.equals(rightPassword)) {
+                System.out.println("登录成功");
+                return;
+            }else {
+                if (i == 2) {
+                    System.out.println("账号“" + username + "”已被锁定，请联系管理员解锁");
+                } else {
+                    System.out.println("用户名或密码错误");
+                    System.out.println("还有 " + (2 - i) + "次机会");
+                }
+            }
+        }
+
+    }
+}
+
+```
+
+------
+
+![字符串的比较练习2](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260709164844625.png)
+
+| 字符串的索引和长度方法          |                  |
+| ------------------------------- | ---------------- |
+| `public char charAt(int index)` | 根据索引返回字符 |
+| `public int length()`           | 返回字符串长度   |
+
+注意这个`length()`是方法，通过`String`对象调用，而数组的`length`是数组对象的属性
+
+```java
+package com.itheima.stringDemo;
+
+import java.util.Scanner;
+
+/**
+ 键盘录入，遍历字符串
+**/
+public class StringDemo5 {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        String str1 = sc.nextLine();
+
+        for (int i = 0; i < str1.length(); i++) {
+            System.out.println(i+":"+str1.charAt(i));
+        }
+    }
+}
+
+```
 
 
 
+------
+
+![练习3](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260709165510938.png)
+
+```java
+package com.itheima.stringDemo;
+
+import java.util.Scanner;
+
+/**
+ * 统计字符次数
+ * 键盘录入一个字符串，统计该字符串中大写字母字符，小写字母字符，数字字符出现的次数(不考虑其他字符)
+ */
+public class StringDemo6 {
+    static void main(String[] args) {
+        Scanner sc=new Scanner(System.in);
+        String str=sc.nextLine();
+
+        int countUp=0;
+        int countDown=0;
+        int countNum=0;
+
+//        char[] upper = {'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'};
+//        char[] down = {'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'};
+//        char[] num = {'0','1','2','3','6','7','8','9'};
+        
+        //可以直接比较字符的ASCII码值
+        for (int i = 0; i < str.length(); i++) {
+            char c = str.charAt(i);
+            if (c >= 'A' && c <= 'Z') {
+                countUp++;
+            } else if (c >= 'a' && c <= 'z') {
+                countDown++;
+            } else if (c >= '0' && c <= '9') {
+                countNum++;
+            }
+        }
+        System.out.println("大写字母字符出现的次数为："+countUp);
+        System.out.println("小写字母字符出现的次数为："+countDown);
+        System.out.println("数字字符出现的次数为："+countNum);
+    }
+}
+
+```
+
+注意`char`能直接通过ASCII码值比较
+
+------
+
+![练习4](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260709170358368.png)
+
+  
+
+```java
+package com.itheima.stringDemo;
+
+import java.util.Arrays;
+
+/**
+ * 拼接字符串
+ * 定义一个方法，把int数组中的数据按照指定的格式拼接成一个字符串返回，调用该方法，并在控制台输出结果。例如:
+ * 数组为int[]arr={1,2,3);
+ * 执行方法后的输出结果为:[1,2,3]
+ */
+public class StringDemo7 {
+
+    static void main(String[] args) {
+        int[] arr={1,2,3};
+        System.out.println(intArrToStr(arr));
+    }
+
+    public static String intArrToStr(int[] arr){
+        if(arr==null){
+            return "";
+        }
+        if(arr.length==0){
+            return "[]";
+        }
+
+        String result="[";
+        for(int i=0;i<arr.length;i++){
+            result+=arr[i];
+            if (i!=arr.length-1) {
+                result+=", ";
+            }
+        }
+        result+="]";
+        return result;
+    }
+}
+
+```
+
+＿φ(．．*)：
+
+这个地方的方法记得要写为`static`
+
+因为如果不是静态的，就需要创建对应的实例对象才可以使用该方法，也就是如下
+
+```java
+StringDemo7 demo = new StringDemo7(); // 创建对象
+System.out.println(demo.intArrToStr(arr));
+```
+
+------
+
+![练习5](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260709182815567.png)
+
+```java
+package com.itheima.stringDemo;
+
+import java.util.Scanner;
+
+/**
+ * 字符串反转
+ * 定义一个方法，实现字符串反转。键盘录入一个字符串，调用该方法后，在控制台输出结果例如，键盘录入abc，输出结果cba
+ */
+public class StringDemo8 {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        String str1 = sc.nextLine();
+        System.out.println(reverse(str1));
+
+    }
+    public static String reverse(String str1){
+        String str2="";
+        for(int i=str1.length()-1;i>=0;i--){
+            str2+=str1.charAt(i);
+        }
+        return str2;
+    }
+}
+
+```
+
+------
+
+![练习6](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260709183322346.png)
+
+自行作答：运行成功
+
+```java
+package com.itheima.stringDemo;
+
+/**
+ * 数字转成中文，一共有7位，例如1234567，转成中文为壹佰贰拾叁万肆仟伍佰陆拾柒元
+ * 如果位数不够，则用零补全，比如123456，转成中文为壹拾贰万叁仟肆佰伍拾陆元
+ */
+public class StringDemo9 {
+    public static void main(String[] args) {
+//        int num=1234567;
+//        if(num<0||num>9999999){
+//            System.out.println("输入错误");
+//            return;
+//        }
+        System.out.println(numToChinese(1234567));
+        System.out.println(numToChinese(123456));
+        System.out.println(numToChinese(1234));
+    }
+    public static String numToChinese(int num){
+        String result="";
+        String chineseStr="";
+        //将数字转为字符串
+        String numStr=num+"";
+        //用0补全到7位
+        while(numStr.length()<7){
+            numStr="0"+numStr;
+        }
+        //将数字字符串转换为中文数字
+        for(int i=0;i<7;i++){
+            chineseStr+=findChineseNum(numStr.charAt(i));
+        }
+
+        //将中文数字转换为中文金额格式
+        result=chineseStr.charAt(0)+"佰"+chineseStr.charAt(1)+"拾"+chineseStr.charAt(2)+"万"+chineseStr.charAt(3)+"仟"+chineseStr.charAt(4)+"佰"+chineseStr.charAt(5)+"拾"+chineseStr.charAt(6)+"元";
+
+//        char[] chs = {'佰','拾','万','仟','佰','拾','元'};
+//        for(int i=0;i<chs.length;i++){
+//            result+=chineseStr.charAt(i);
+//            result+=chs[i];
+//        }
+
+        return  result;
+    }
+
+    public static String findChineseNum(char num){
+        String result = switch (num) {
+            case '0' -> "零";
+            case '1' -> "壹";
+            case '2' -> "贰";
+            case '3' -> "叁";
+            case '4' -> "肆";
+            case '5' -> "伍";
+            case '6' -> "陆";
+            case '7' -> "柒";
+            case '8' -> "捌";
+            case '9' -> "玖";
+            default -> "";
+        };
+        return result;
+    }
+
+//    public static char toUpperNum(char num){
+//        char[] chs = {'零','壹','贰','叁','肆','伍','陆','柒','捌','玖'};
+//        return chs[num-'0'];
+//    }
+
+
+}
+
+```
+
+可以改进部分：
+
+1. 增加格式检查部分
+
+   ```java
+   if(num<0||num>9999999){
+               System.out.println("输入错误");
+               return;
+           }
+   ```
+
+2. 简化把数字转为中文大写的函数
+
+   ```
+   public static char toUpperNum(char num){
+           char[] chs = {'零','壹','贰','叁','肆','伍','陆','柒','捌','玖'};
+           return chs[num-'0'];
+       }
+   ```
+
+3. 简化转为中文金额的格式
+
+   ```java
+   char[] chs = {'佰','拾','万','仟','佰','拾','元'};
+           for(int i=0;i<chs.length;i++){
+               result+=chineseStr.charAt(i);
+               result+=chs[i];
+           }
+   ```
+
+4. 对于数字字符串转中文数字字符串，可以采取除10的方法获取每位数字
+
+------
+
+![练习7](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260709220406756.png)
+
+| 字符串获取子串方法                               |                                            |
+| ------------------------------------------------ | ------------------------------------------ |
+| `String subString(int beginIndex, int endIndex)` | 左闭右开，返回被截取的，不影响原来的字符串 |
 
 
 
+###### 快捷键：如何快速使用`if for switch`语句包裹指定代码块
 
+`ctrl+alt+t`
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+![语句包裹快捷键](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260709164241668.png)
 
 
 
