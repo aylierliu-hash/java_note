@@ -1761,9 +1761,124 @@ public class StringDemo9 {
 
 | 字符串获取子串方法                               |                                            |
 | ------------------------------------------------ | ------------------------------------------ |
-| `String subString(int beginIndex, int endIndex)` | 左闭右开，返回被截取的，不影响原来的字符串 |
+| `String substring(int beginIndex, int endIndex)` | 左闭右开，返回被截取的，不影响原来的字符串 |
+| `String substring(int beginIndex)`               | 重载方法，一直截取到末尾                   |
 
+```java
+package com.itheima.stringDemo;
 
+/**
+ * 手机号屏蔽
+ * 例如13800000000，屏蔽为138****0000
+ */
+public class StringDemo10 {
+    static void main(String[] args) {
+        String str="13800000000";
+        System.out.println(maskPhone(str));
+    }
+
+    public static String maskPhone(String phone){
+        if(phone==null){
+            return "";
+        }
+        if(phone.length()!=11) {
+            System.out.println("手机号格式错误");
+            return phone;
+        }
+
+        return phone.substring(0,4)+"****"+phone.substring(7);
+
+    }
+}
+
+```
+
+------
+
+![练习8](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260709235015011.png)
+
+```java
+package com.itheima.stringDemo;
+
+/**
+ * 身份证信息查看。
+ * 7-14位:出生年、月、日
+ * 17位:性别(奇数男性，偶数女性)
+ * 人物信息为:出生年月日:XXXX年X月X日
+ * 性别为:男/女
+ */
+public class StringDemo11 {
+    static void main(String[] args) {
+        String idCard="440304199001010011";
+        System.out.println("人物信息为：");
+        System.out.println("出生年月日:"+idCard.substring(6,10)+"年"+idCard.substring(10,12)+"月"+idCard.substring(12,14)+"日");
+        System.out.println("性别为:"+(Integer.parseInt(idCard.charAt(16)+"")%2==1?"男":"女"));
+
+//        char gender=idCard.charAt(16);
+        //ASCII码表中，0-9的ASCII码值为48-57
+        //'0'-->48
+        //'1'-->49
+        //'2'-->50
+        //'3'-->51
+        //'4'-->52
+        //'5'-->53
+        //'6'-->54
+        //'7'-->55
+        //'8'-->56
+        //'9'-->57
+
+//        int genderNum=gender-48;
+//        int genderNum=gender-'0';
+//        System.out.println("性别为:"+(genderNum%2==1?"男":"女"));
+
+        
+    }
+
+}
+
+```
+
+注意这里可以使用一些技巧将`String`类型的数据，保持数据值不变的情况下转为`int`类型：
+
+```java
+int genderNum=gender-48;
+int genderNum=gender-'0';
+```
+
+------
+
+![image-20260710175236489](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260710175236489.png)
+
+| 字符串部分替换方法                           |                                              |
+| -------------------------------------------- | -------------------------------------------- |
+| `String replace(char oldChar, char newChar)` | 替换单个字符`‘c’`                            |
+| `String replace(CharSequence, CharSequence)` | 这个`CharSequence`这个接口被很多字符串实现了 |
+
+注意`replace()`方法会替换所有匹配的部分
+
+```java
+package com.itheima.stringDemo;
+
+/**
+ * 敏感词替换
+ */
+public class StringDemo12 {
+    static void main(String[] args) {
+        //获取说的话
+        String talk = "这是一句脏话，TMD，TNND，MLGB";
+        //定义敏感词库
+        String[] sensitiveWords = {"TMD","TNND","MLGB"};
+        //替换脏话
+        for (String sensitiveWord : sensitiveWords) {
+            talk = talk.replace(sensitiveWord,"***");
+        }
+        //打印结果
+        System.out.println(talk);
+    }
+
+}
+
+```
 
 ###### 快捷键：如何快速使用`if for switch`语句包裹指定代码块
 
@@ -1771,29 +1886,282 @@ public class StringDemo9 {
 
 ![语句包裹快捷键](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260709164241668.png)
 
+## StringBuilder
+
+`StringBuiler`的内容是可变的，如此可以提高字符串操作的效率
+
+> 内容可变，所以字符串操作时不用反复重新创建新的字符串，减少了中间结果的数量
+
+### `StringBuilder`的构造方法
+
+| 方法名                             |                              |
+| ---------------------------------- | ---------------------------- |
+| `public StringBuilder()`           | 创建一个空白的可变字符串对象 |
+| `public SrtingBuilder(String str)` | 根据str创建可变字符串对象    |
+
+### `StringBuilder`的常用方法
+
+| 方法名                                  | 说明                          |
+| --------------------------------------- | ----------------------------- |
+| `public StringBuilder append(任意类型)` | 添加数据返回对象本身          |
+| `public StringBuilder reverse()`        | 反转容器中的内容              |
+| `public int length()`                   | 返回长度（字符串出现的个数）  |
+| `public String toString()`              | 把`StringBuilder`变为`String` |
+
+`append()`和`reverse()`会直接改变`StringBuilder`
+
+`length()`和`toString()`不会改变，只进行读取并返回新创建的结果
+
+```java
+package com.itheima.stringBuilderDemo;
+
+public class StringBuilderDemo3 {
+    public static void main(String[] args) {
+        StringBuilder sb = new StringBuilder("");
+
+        //StringBuider打印对象是属性值而不是地址值
+        System.out.println(sb);
+
+        //append方法在末尾添加字符串
+        // 直接改变sb的内容
+        sb.append("hello");
+        System.out.println(sb);
+
+        //reverse方法将sb的内容反转
+        // 直接改变sb的内容
+        sb.reverse();
+        System.out.println(sb);
+
+        //length方法返回sb的内容的长度，不改变sb的内容
+        System.out.println(sb.length());
+
+        //toString不会改变sb的内容，会读取sb的内容并返回一个字符串对象
+        String str=sb.toString();
+        System.out.println(str);
+
+    }
+}
+
+```
+
+#### 关于`toString()`在输出中的应用
+
+对于`sout`，其方法体中，第一步就是调用要打印对象的`toString()`方法
+
+```java
+// 这是 PrintStream 类中的真实逻辑（简化）
+public void println(Object x) {
+    String s = String.valueOf(x); // 核心：将对象转为字符串
+    // ... 然后打印 s
+}
+```
+
+所以打印`StringBuilder`时，隐式地调用了`toString()`方法，不用再手工显式地调用
+
+#### 链式调用
+
+对于**直接改变内容且有返回值**的方法，再进行多个这样的方法操作时，可以一次性调用多个需要的方法
+
+```java
+sb.append("hello").append(", ").append("world")
+```
 
 
 
+#### 练习
+
+![练习1](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260711163212570.png)
+
+```java
+package com.itheima.stringBuilderDemo;
+
+import java.util.Scanner;
+
+/**
+ * 对称字符串
+ * 需求:键盘接受一个字符串，程序判断出该字符串是否是对称字符串，并在控制台打印是或不是
+ * 对称字符串:123321、111
+ * 非对称字符串:123123
+ */
+public class StringBuilderDemo5 {
+    public static void main(String[] args) {
+        //获取键盘输入的字符串
+        Scanner sc = new Scanner(System.in);
+        System.out.println("请输入一个字符串:");
+        String str=sc.nextLine();
+
+        //判断是否是对称字符串
+        boolean isPalindrome=isPalindrome(str);
+
+        System.out.println("该字符串"+(isPalindrome?"是":"不是")+"对称字符串");
+    }
+
+    public static boolean isPalindrome(String str){
+        StringBuilder sb=new StringBuilder(str);
+        sb.reverse();
+        //判断sb的内容是否等于str
+        return sb.toString().equals(str);
+    }
+}
+
+```
 
 
 
+＿φ(．．*)
+
+1. `String`和`SrtingBuilder`比较：使用`toString()`方法返回`StringBuilder`的`String`形式的值，再使用String的比较方法比较两者
+
+   ```java
+   sb.toString().equals(str)
+   ```
+
+   
+
+2. `boolean`的返回值可以使用`三元不等式`实现输出语句的优化
+
+   ```java
+    //判断是否是对称字符串
+           boolean isPalindrome=isPalindrome(str);
+   
+           System.out.println("该字符串"+(isPalindrome?"是":"不是")+"对称字符串");
+   ```
+
+3. 该程序也可以不写方法，纯用链式调用完成
+
+   ```java
+   String result = new StringBuilder().append(str).reverse.toString().equals(str);
+   ```
+
+   
+
+------
+
+![练习2](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260711170033828.png)
+
+```java
+package com.itheima.stringBuilderDemo;
+
+import java.util.Scanner;
+
+/**
+ *拼接字符串
+ * 需求:定义一个方法，把int数组中的数据按照指定的格式拼接成一个字符串返回。
+ * 调用该方法，并在控制台输出结果。
+ * 例如:数组为int[]arr={1,2,3);
+ * 执行方法后的输出结果为:[1,2,3]
+ */
+public class StringBuilderDemo6 {
+    static void main(String[] args) {
+        int[] arr={1,2,3,4,5};
+        String str=concatArray(arr);
+        System.out.println(str);
+
+        int[] arr2={};
+        str=concatArray(arr2);
+        System.out.println(str);
+        
+        int[] arr3=null;
+        str=concatArray(arr3);
+        System.out.println(str);
+    }
+    public static String concatArray(int[] arr){
+        //判断数组是否为空
+        if(arr==null||arr.length==0){
+            return "[]";
+        }
+        StringBuilder sb=new StringBuilder("[");
+        for (int i = 0; i < arr.length; i++) {
+            if(i==arr.length-1){
+                sb.append(arr[i]);
+                sb.append("]");
+            }else {
+                sb.append(arr[i]);
+                sb.append(",");
+            }
+
+        }
+        return sb.toString();
+    }
+}
+
+```
+
+＿φ(．．*)
+
+还是要注意空指针，也就是引用数据类型对象的非空判断
+
+## StringJoiner
+
+和`SrtingBuilder`一样，是可变的字符串
+
+专门用于按指定分隔符分割字符串，同时可以添加前缀和后缀
+
+JDK8出现
+
+### `SrtingJoiner`的构造方法
+
+| 方法名                                              | 说明                                     |
+| --------------------------------------------------- | ---------------------------------------- |
+| `public StringJoiner(间隔符号)`                     | 创建对象，指定分隔符                     |
+| `public StringJoiner(间隔符号, 开始符号, 结束符号)` | 创建对象，指定分割符，开始符号，结束符号 |
+
+注意没有空参构造
+
+### `StringJoiner`的成员方法
+
+| 方法名                              | 说明                         |
+| ----------------------------------- | ---------------------------- |
+| `public StringJoiner add(任意类型)` | 添加数据，返回对象本身       |
+| `public int length()`               | 返回长度（字符出现的个数）   |
+| `public String toString()`          | 把`StringJoiner`变为`String` |
+
+`add()`是像数组一样，一个元素一个元素添加
+
+`length()`返回的长度是字符的个数，而不是被分割的字符串的个数
+
+`toString()`和StringBuilder一样
+
+```java
+package com.itheima.stringJoinerDemo;
+
+import java.util.StringJoiner;
+
+public class StringJoinerDemo1 {
+    static void main(String[] args) {
+        StringJoiner sj=new StringJoiner("---");
+        sj.add("aaa").add("bbb").add("ccc");
+        System.out.println(sj);
+
+        StringJoiner sj2=new StringJoiner(", ", "[", "]");
+        sj2.add("aaa").add("bbb").add("ccc");
+
+        //length方法返回sj2的内容的长度，不改变sj2的内容
+        //长度是字符的个数，而不是其中被分割的字符串的个数
+        //例如：[aaa,bbb,ccc]的长度是15，而不是3
+        System.out.println(sj2);
+        System.out.println(sj2.length());//15
+
+
+    }
+}
+```
 
 
 
+## 字符串原理
 
+#### 字符串存储的内存原理
 
+- 直接赋值的会复用，在字符串常量池中
+- new出来的不会复用，而是开辟一个新空间
 
+#### ==号比较的是什么
 
+比较的是变量里具体存的数值：
 
+- 基本数据类型就是其数据值
+- 引用数据类型比较地址值
 
-
-
-
-
-
-
-
-
-
-
+#### 字符串拼接的底层原理
 
