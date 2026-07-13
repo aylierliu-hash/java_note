@@ -1238,9 +1238,15 @@ p.s.这一章没有作业
 
 #### 直接创建赋值
 
-```
+```java
 String name = "AylerLiu";
 ```
+
+```java
+sb.append("abc")
+```
+
+注意这里字符串`“abc”`创建的方法也属于直接赋值创建的方法
 
 #### `new`（显示调用构造方法）
 
@@ -1343,6 +1349,16 @@ public class Test {
 直接赋值方式创建的字符串，会放在`StringTable(串池)`中![直接赋值的字符串的内存](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260708162102925.png)
 
 在创建的时候，会先检查串池中是否已存在该字符串，不存在则创建新的，存在则==复用==，节约内存
+
+这种直接赋值创建的方法，也涵盖如下在方法中作为参数传入的字符串的情况
+
+```java
+sb.append("abc")
+```
+
+由于这种创建方法在创建时会先去字符串常量池（串池）中查看是否存在，不一定是重新创建的，所以也被称为`常量池分配`
+
+这个名字比较全面
 
 #### new创建的字符串
 
@@ -2164,4 +2180,426 @@ public class StringJoinerDemo1 {
 - 引用数据类型比较地址值
 
 #### 字符串拼接的底层原理
+
+##### 情况一：拼接的时候没有变量参与
+
+如果拼接的时候没有变量参与，都是字符串
+
+```java
+public class test {
+    public static void main(String[] args) {
+        String str1 = "a" + "b" + "c";
+        System.out.println(str1);
+    }    
+}
+```
+
+则会触发字符串的优化机制，在编译的时候已经是最终结果了
+
+意思是，在编译之后的`.class`文件中，第三行直接变为
+
+```java
+ String str1 = "abc";
+```
+
+###### 补充：关于Java的优化机制
+
+**编译期优化（`javac` 干的活）**
+
+- **数值常量折叠（Constant Folding）**
+  和字符串一样，纯数字的加减乘除在编译期就算好了。
+
+  java
+
+  ```java
+  int a = 10 + 20 + 30; 
+  // 编译后直接变成：int a = 60; 运行时不再计算
+  ```
+
+  
+
+- **常量变量折叠**
+  如果变量被 `final` 修饰且初始化为字面量，也会被视为常量进行折叠。
+
+  java
+
+  ```java
+  final int X = 10;
+  final int Y = 20;
+  int z = X + Y; // 编译后直接变成 int z = 30;
+  ```
+
+  
+
+- **条件编译（死代码消除）**
+  如果 `if` 语句的条件在编译期就能确定为 `true` 或 `false`，编译器会直接去掉不执行的代码块。
+
+  java
+
+  ```java
+  if (true) {
+      System.out.println("执行A");
+  } else {
+      System.out.println("执行B"); // 这行字节码在 .class 文件中直接被删掉了
+  }
+  ```
+
+  
+
+  这也是为什么日志框架中经常用 `if (log.isDebugEnabled())`，就是为了让编译器在条件不满足时直接忽略里面的内容。
+
+------
+
+**运行期优化（JIT 即时编译器干的活）**—— 这才是 Java 性能强大的核心
+
+运行期优化比编译期优化强大得多，因为 JIT 能收集运行数据（热点代码）进行动态优化。
+
+- **逃逸分析（Escape Analysis）+ 锁消除**
+  这是最经典的优化。如果你在方法内部 `new` 了一个 `StringBuffer` 或 `StringBuilder`，并且**这个对象没有逃离该方法**（即没有被返回或传到外部），JVM 会判断：既然这个对象只在这一处使用，那么**加锁（synchronized）是多余的**。JIT 会直接把 `StringBuffer` 方法上的同步锁优化掉，大幅提升性能。
+- **标量替换（Scalar Replacement）**
+  接上一条，如果对象没有逃逸，JIT 可能**不创建这个对象**，而是直接把这个对象的成员变量拆解成普通的局部变量（比如 `int x`、`String y`）在栈上分配，从而减少堆内存的分配和垃圾回收压力。
+- **方法内联（Method Inlining）**
+  这是 JIT 最基础的优化。当 JVM 检测到某个方法被频繁调用（热点方法）且方法体足够小时，它会直接把目标方法的代码“拷贝”到调用处，省去栈帧创建、入栈出栈的开销。
+- **空值检查消除（Null Check Elimination）**
+  如果 JIT 通过数据分析发现某个引用在上下文中一定不为 `null`，它会自动去掉代码里的空值检查指令。
+
+##### 情况二：拼接的时候有变量参与
+
+JDK8以前
+
+有变量参与则在运行时才实现拼接，也就是不触发优化机制
+
+具体来说，字符串拼接时，会先创建一个`StringBuilder`对象，进行拼接之后再使用`toString()`方法，把结果变回字符串返回
+
+![有变量参与的字符串拼接](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260712180514462.png)
+
+所以一次拼接，堆中至少会产生两个对象，一个String一个StringBuilder的对象
+
+比较浪费性能，速度相对慢
+
+同时，经过拼接之后获得的字符串是`new`创建的，也就是途中的`s2`,`s3`是new创建的，和由直接赋值（常量池分配）的方法创建的`s1`不同
+
+------
+
+JDK8以后，仍然不触发优化机制，但是有新的多个方案，默认为以下的方案：
+
+先预估出字符串的长度，然后再填充
+
+![JDK8之后的默认方案](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260712181243316.png)
+
+不过在有多行拼接代码的情况下，仍然很慢
+
+###### 补充：搜索源代码
+
+`ctrl+n`
+
+![image-20260712175123681](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260712175123681.png)
+
+选中所有位置
+
+![image-20260712175210357](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260712175210357.png)
+
+![image-20260712175550303](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260712175550303.png)
+
+#### `StringBuilder`提高效率原理图
+
+![image-20260712182217569](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260712182217569.png)
+
+没啥好说的，就是直接放不创建新空间
+
+##### 常见面试题
+
+![题目1](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260712183943241.png)
+
+![题目2](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260712184009352.png)
+
+#### `StringBuilder`的源码分析
+
+默认创建一个容量为16的字节数组
+
+- 容量：最多装多少，可以使用`capacity()`方法获取
+- 长度：已经装了多少，使用`length()`方法获取
+
+
+
+添加的内容长度小于16，则直接添加
+
+如果添加的内容长度大于16，则需扩容：
+
+- 如果添加的内容长度小于容量*2+2（34），则扩充到34
+- 如果添加的内容长度大于容量*2+2（34），则扩充到添加的内容的长度，也就是所需的最小容量
+- 如果超过最大限制，则作溢出处理
+
+```java
+package com.itheima;
+
+public class Test4 {
+    public static void main(String[] args) {
+        StringBuilder sb1 = new StringBuilder();
+        StringBuilder sb2 = new StringBuilder();
+
+        System.out.println(sb1.capacity()); //16
+        System.out.println(sb1.length()); //0
+
+        sb1.append("abc");
+        System.out.println(sb1.capacity()); //16
+        System.out.println(sb1.length()); //3
+
+        sb1.append("defghijklmnopqrstuvwxyz");
+        System.out.println(sb1.capacity()); //34
+        System.out.println(sb1.length()); //26
+
+        sb2.append("abcdefghijklmnopqrstuvwxyz0123456789");
+        System.out.println(sb2.capacity()); //36
+        System.out.println(sb2.length()); //36
+
+    }
+}
+
+```
+
+注意扩容是创建了一个新的字符数组`char[]`，再使用`Arrays.copyOf()`复制原来的数据到新的字符数组中
+
+> 注意，这里的**字符数组**就是`StringBuilder`的底层实现
+>
+> JDK9之后，底层变为`byte[]+coder(编码标识)`，扩容是计算逻辑不变
+>
+> p.s.这里的变化可以仔细说说
+>
+> 原先的方法使用`UTF-16`，其每个字符都占两个字节，这是为了容纳如中文或者emoji等符号，但是对于英文、数字和大部分标点的`Latin-1`来说，其理论上只需占一个字节，这样为了规范编码就会产生许多空间浪费
+>
+> 所以在JDK9+中，同时引入了两套编码标准，每个`StringBuilder`对象，也就是每个字符数组都带有一个`coder`，用来指示其使用的是什么编码标准，这样对于例如全英文的字符串，就能节省下和原来相比一半 的空间。同时，扩容行为也会参照`coder`来扩容
+>
+> 当然，如果字符数组中出现了一个两个字节的字符（比如中文字符），则`coder`就会永久设置为`1`，表示`UTF-16`编码。
+
+## 综合练习
+
+### 罗马数字
+
+![练习一：罗马数字](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260713171722913.png)
+
+```java
+package com.itheima.test;
+
+import java.util.Scanner;
+
+/**
+ * 转换罗马数字
+ * 键盘录入一个字符串，
+ * 要求1:长度为小于等于9
+ * 要求2:只能是数字
+ * 将内容变成罗马数字
+ * 下面是阿拉伯数字跟罗马数字的对比关系:
+ * I-1,II -2,III -3,IV-4,V-5,VI-6,VII -7,VIII -8,IX-9
+ * 注意点:
+ * 罗马数字里面是没有0的
+ * 如果键盘录入的数字包含0，可以变成""(长度为0的字符串)
+ */
+public class Test1 {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        String str;
+        while (true) {
+            str = sc.nextLine();
+            if (check(str)) {
+                break;
+            }
+            System.out.println("输入格式错误，请重新输入");
+        }
+        System.out.println(convertToRoman(str));
+
+    }
+
+    public static boolean check(String str) {
+        if(str==null||str.length()==0){
+            return false;
+        }
+        if(str.length()>9){
+            System.out.println("长度不能大于9");
+            return false;
+        }
+        if(!str.matches("[0-9]+")){
+            System.out.println("只能是数字");
+            return false;
+        }
+        //判断是否是数字的另一种方法
+//        for (int i = 0; i < str.length(); i++) {
+//            char c = str.charAt(i);
+//            if(c<='0'||c>='9'){
+//                return false;
+//            }
+//        }
+        return true;
+    }
+
+    public static String convertToRoman(String str) {
+        String[] romans = {"","I","II","III","IV","V","VI","VII","VIII","IX"};
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < str.length(); i++) {
+            result.append(romans[str.charAt(i)-'0']);
+            if (i!=str.length()-1) {
+                result.append("-");
+            }
+        }
+        return result.toString();
+    }
+
+    //可以使用switch实现，对每个字符进行判断
+    public static String convertToRoman2(char number) {
+        String result = "";
+        switch (number) {
+            case '0'->result="";
+            case '1'->result="I";
+            case '2'->result="II";
+            case '3'->result="III";
+            case '4'->result="IV";
+            case '5'->result="V";
+            case '6'->result="VI";
+            case '7'->result="VII";
+            case '8'->result="VIII";
+            case '9'->result="IX";
+            default->result="";
+        }
+        return result;
+    }
+}
+
+```
+
+
+
+#### ＿φ(．．*)1：关于判断非数字
+
+1. 通过`char`的ASCII码值判断
+
+   ```
+           for (int i = 0; i < str.length(); i++) {
+               char c = str.charAt(i);
+               if(c<='0'||c>='9'){
+                   return false;
+               }
+           }
+   ```
+
+2. 通过`正则表达式(reg ex)`
+
+   ```
+   if(!str.matches("[0-9]+"))
+   ```
+
+
+
+##### 正则表达式
+
+> 编译原理学过
+
+**正则表达式（Regular Expression，简称 regex）**，本质上是一套 **“超级字符串匹配规则”**。
+
+正则表达式的基本构成，就像字母和单词：
+
+- **普通字符**：直接匹配自己。比如正则 `abc` 只能匹配字符串 `"abc"`。
+- **元字符（特殊符号）**：有特殊含义的符号，用来表示“某一类”字符。
+  - `\d` 匹配任意数字（等价于 `[0-9]`）。
+  - `\w` 匹配单词字符（字母、数字、下划线）。
+  - `.` 匹配任意一个字符（除换行外）。
+- **字符类（用 `[]` 括起来）**：表示“或”关系。
+  - `[0-9]` 表示 0 到 9 的任意一个数字。
+  - `[a-zA-Z]` 表示任意一个字母。
+- **量词（限定次数）**：表示前面的字符出现多少次。
+  - `+`：至少出现 1 次。
+  - `*`：可以出现 0 次或多次。
+  - `?`：出现 0 次或 1 次。
+  - `{5}`：必须出现 5 次。
+  - `{2,5}`：出现 2 到 5 次。
+
+所以，上面使用的`[0-9]+`表示的就是有0到9的字符组成、且每个字符至少出现一次的情况，即必须是数字组成
+
+
+
+#### ＿φ(．．*)2：关于输入语句
+
+使用`while(true)`循环判断直到输入达成条件
+
+#### ＿φ(．．*)3：关于字符对应替换的方法
+
+1. 使用字符数组`char[]`，将各个字符一一匹配，注意要把char换成int才能作为**索引**输入
+
+   ```java
+    String[] romans = {"","I","II","III","IV","V","VI","VII","VIII","IX"};
+   
+   romans[str.charAt(i)-'0']
+   ```
+
+2. 使用`switch`语句
+
+   ```java
+    public static String convertToRoman2(char number) {
+           String result = "";
+           switch (number) {
+               case '0'->result="";
+               case '1'->result="I";
+               case '2'->result="II";
+               case '3'->result="III";
+               case '4'->result="IV";
+               case '5'->result="V";
+               case '6'->result="VI";
+               case '7'->result="VII";
+               case '8'->result="VIII";
+               case '9'->result="IX";
+               default->result="";
+           }
+           return result;
+       }
+   ```
+
+
+
+##### 关于`switch`语句
+
+JDK12+对`switch`语句进行了优化，对于赋值操作，可以按如下的方式书写
+
+```java
+public static String convertToRoman2(char number) {
+        String result = switch (number) {
+            case '0'->"";
+            case '1'->"I";
+            case '2'->"II";
+            case '3'->"III";
+            case '4'->"IV";
+            case '5'->"V";
+            case '6'->"VI";
+            case '7'->"VII";
+            case '8'->"VIII";
+            case '9'->"IX";
+            default->"";
+        };
+        return result;
+    }
+```
+
+
+
+相当于把`switch`当作一整句赋值表达式了，所以注意末尾加上分号`;`
+
+##### 如何竖向选中代码
+
+鼠标滚轮中键
+
+or
+
+alt+左键
+
+![竖向选中代码](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260713180448796.png)
+
+
+
+
+
+
+
+
+
+
+
+
 
