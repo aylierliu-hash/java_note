@@ -1399,6 +1399,8 @@ public class StringCompareDemo1 {
 
 ```
 
+但是要注意，**判断非空时应该用==**，即使是引用数据
+
 ##### `String`的比较方法
 
 | 字符串的比较方法                   |            |
@@ -2179,6 +2181,8 @@ public class StringJoinerDemo1 {
 - 基本数据类型就是其数据值
 - 引用数据类型比较地址值
 
+但是要注意，**判断非空时应该用==**，即使是引用数据
+
 #### 字符串拼接的底层原理
 
 ##### 情况一：拼接的时候没有变量参与
@@ -2472,7 +2476,7 @@ public class Test1 {
 
 1. 通过`char`的ASCII码值判断
 
-   ```
+   ```java
            for (int i = 0; i < str.length(); i++) {
                char c = str.charAt(i);
                if(c<='0'||c>='9'){
@@ -2483,7 +2487,7 @@ public class Test1 {
 
 2. 通过`正则表达式(reg ex)`
 
-   ```
+   ```java
    if(!str.matches("[0-9]+"))
    ```
 
@@ -2591,15 +2595,1073 @@ alt+左键
 
 ![竖向选中代码](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260713180448796.png)
 
+### 调整字符串
+
+![练习二：调整字符串](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260713230028625.png)
+
+```java
+package com.itheima.test;
+
+/**
+ * 调整字符串
+ * 给定两个字符串，A和B。
+ * A的旋转操作就是将A最左边的字符移动到最右边。
+ * 例如，若A='abcde'，在移动一次之后结果就是'bcdea'。
+ * 如果不能匹配成功，则返回false
+ * 如果在若干次调整操作之后，A能变成B，那么返回True。
+ */
+public class Test2 {
+    static void main(String[] args) {
+        String A = "abcde";
+        String B = "cdeab";
+        String C = "abcdf";
+
+        System.out.println(ifEqualAfterRotate(A, B));//true
+        System.out.println(ifEqualAfterRotate(B, C));//false
+
+
+    }
+
+    public static String rotate(String str) {
+        if (str == null || str.isEmpty()) {
+            return str;
+        }
+
+        StringBuilder sb = new StringBuilder();
+
+        for (int i = 1; i < str.length(); i++) {
+            sb.append(str.charAt(i));
+        }
+        sb.append(str.charAt(0));
+
+        return sb.toString();
+    }
+
+    public static boolean ifEqualAfterRotate(String A, String B) {
+        if (A == null || A.isEmpty() || B == null || B.isEmpty()) {
+            System.out.println("A或B为空");
+            return false;
+        }
+        if (A.length() != B.length()) {
+            return false;
+        }
+
+        //外层循环用于遍历A移动的所有结果和B进行比较
+        for (int i = 0; i < A.length(); i++) {
+            //count用于记录A和B的每个字符是否相等的次数
+            int count = 0;
+            //内层循环用于比较A和B的每个字符是否相等
+            for (int j = 0; j < B.length(); j++) {
+                if (A.charAt(j) != B.charAt(j)) {
+                    //如果A和B的字符不相等，重置count为0
+                    count = 0;
+                    break;
+                }
+                count++;
+            }
+            //如果count等于A的长度，说明A和B的所有字符都相等
+            if (count == A.length()) {
+                return true;
+            }
+            //如果count不等于A的长度，说明A和B的字符不相等，移动A一次后继续比较
+            A = rotate(A);
+        }
+        return false;
+
+    }
+}
+
+```
+
+
+
+＿φ(．．*)：还是对字符串常见方法不熟悉：
+
+1. 获取“旋转”后的串，使用字串获取方法`subString()`
+
+   ```java
+   sb = str.subString(1);
+   sb.append(str.charAt(0));
+   ```
+
+2. 比较两个字符串是否相等，直接用`equals()`方法就行
+
+3. 补充一点：“旋转”还可以通过使用字符数组实现，具体思路类似于队列排序
+
+
+
+### 打乱字符串
+
+键盘输入任意字符，打乱其内容
+
+```java
+package com.itheima.test;
+
+import java.util.Random;
+import java.util.Scanner;
+
+/**
+ * 作业2
+ * 键盘输入任意字符串，打乱其内容
+ */
+public class Test3 {
+    static void main(String[] args) {
+        System.out.println("请输入任意字符字符串：");
+        Scanner sc = new Scanner(System.in);
+        String str = sc.nextLine();
+
+        System.out.println(shuffle(str));
+
+    }
+
+    public static String shuffle(String str) {
+        char[] chars = new char[str.length()];
+        Random random = new Random();
+        for (int i = 0; i < str.length(); i++) {
+            //注意这里不要直接给index赋值为0，否则字符串的第一个字符还是在第一个位置
+            int index = random.nextInt(chars.length);
+            //注意字符数组在初始化的时候，会自动填充'\0'，所以这里需要判断是否为'\0'，如果是，说明该位置已经被使用了
+            while (chars[index] != '\0') {
+                //左闭右开取到0
+                index = random.nextInt(chars.length);
+            }
+            chars[index] = str.charAt(i);
+        }
+        return new String(chars);
+    }
+}
+
+```
+
+＿φ(．．*)
+
+[参考答案的打乱方法见](#shuffle)
+
+这个ctrl+左键点击跳转
+
+### 生成验证码
+
+```java
+package com.itheima.test;
+
+import java.util.Random;
+
+/**
+ * 作业3
+ * 生成验证码
+ * 内容：可以是小写字母，也可以是大写字母，还可以是数字
+ * 规则：
+ * 长度为5
+ * 内容中是四位字母，1位数字。
+ * 其中数字只有1位，但是可以出现在任意的位置。
+ */
+public class Test4 {
+    static void main(String[] args) {
+        System.out.println(generateCode());
+        System.out.println(generateCode());
+        System.out.println(generateCode());
+    }
+
+    public static String generateCode() {
+        char[] chars = new char[5];
+        char[] alpha = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
+        Random random = new Random();
+
+        chars[random.nextInt(5)] = (char) (random.nextInt(10) + '0');
+        //注意只剩下四个位置，所以这里需要循环4次，而不是5次
+        //否则while循环会无限循环
+        for (int i = 0; i < 4; i++) {
+            int index = random.nextInt(5);
+            while (chars[index] != '\0') {
+                index = random.nextInt(5);
+            }
+            chars[index] = alpha[random.nextInt(alpha.length)];
+        }
+
+        return new String(chars);
+    }
+}
+
+```
+
+也可以先按顺序生成4个随机字母和一个数字，然后再通过以下方法打乱
+
+<a id="shuffle"></a>
+
+```java
+//将数组里面的内容打乱
+        for (int i = 0; i < arr.length; i++) {
+            int index = r.nextInt(arr.length);
+            char temp = arr[i];
+            arr[i] = arr[index];
+            arr[index] = temp;
+        }
+```
+
+＿φ(．．*)：temp
+
+### 统计英文和数字个数
+
+```java
+package com.itheima.test;
+
+import java.util.Scanner;
+
+import static java.lang.System.in;
+
+/**
+ * 作业4
+ * 请编写程序，由键盘录入一个字符串，统计字符串中英文字母和数字分别有多少个。比如：Hello12345World中字母：10个，数字：5个。
+ */
+public class Test5 {
+    public static void main(String[] args) {
+        System.out.println("请输入任意字符字符串：");
+        Scanner sc = new Scanner(in);
+        String str = sc.nextLine();
+        count(str);
+    }
+
+    public static void count(String str) {
+        int alphaCount = 0;
+        int digitCount = 0;
+        for (int i = 0; i < str.length(); i++) {
+            if (str.charAt(i) >= 'a' && str.charAt(i) <= 'z') {
+                alphaCount++;
+            } else if (str.charAt(i) >= 'A' && str.charAt(i) <= 'Z') {
+                alphaCount++;
+            } else if (str.charAt(i) >= '0' && str.charAt(i) <= '9') {
+                digitCount++;
+            }
+        }
+        System.out.println(str+"中字母：" + alphaCount + "个，数字：" + digitCount + "个");
+    }
+}
+
+```
+
+＿φ(．．*)
+
+统计英文字母可以先用`toLowerCase()`把大写都转为小写，减少条件分支
+
+
+
+### 判断对称
+
+```java
+package com.itheima.test;
+
+/**
+ * 作业5
+ * 请定义一个方法用于判断一个字符串是否是对称的字符串，
+ * 并在主方法中测试方法。例如：“abcba”、"上海自来水来自海上"均为对称字符串。
+ */
+public class Test6 {
+    public static void main(String[] args) {
+        System.out.println(isSymmetric("abcba"));
+        System.out.println(isSymmetric("上海自来水来自海上"));
+        System.out.println(isSymmetric("abc"));
+
+    }
+
+    public static boolean isSymmetric(String str) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = str.length() - 1; i >= 0; i--) {
+            sb.append(str.charAt(i));
+        }
+
+//        if (sb.toString().equals(str)) return true;
+//        return false;
+        return sb.toString().equals(str);
+
+    }
+}
+
+```
+
+＿φ(．．*)
+
+反转直接用`reverse()`方法
+
+```java
+String reStr = sb.reverse().toString();
+```
+
+
+
+### 判断身份证号码格式
+
+```java
+package com.itheima.test;
+
+/**
+ * 作业6
+ * 我国的居民身份证号码，由由十七位数字本体码和一位数字校验码组成。
+ * 请定义方法判断用户输入的身份证号码是否合法，并在主方法中调用方法测试结果。
+ * 规则为：号码为18位，不能以数字0开头，前17位只可以是数字，最后一位可以是数字或者大写字母X。
+ */
+public class Test7 {
+    public static void main(String[] args) {
+        System.out.println(isIdCardValid("44030419900101001X"));
+        System.out.println(isIdCardValid("440304199001010011"));
+        System.out.println(isIdCardValid("4403041990a1010011"));
+        System.out.println(isIdCardValid("040304199001010011"));
+    }
+
+    public static boolean isIdCardValid(String idCard) {
+        //先非空判断
+        if (idCard == null) return false;
+        if (idCard.length() != 18) return false;
+        if (idCard.charAt(0) == '0') return false;
+        for (int i = 1; i < idCard.length()-1; i++) {
+            if (idCard.charAt(i) < '0' || idCard.charAt(i) > '9') return false;
+        }
+        if ((idCard.charAt(idCard.length()-1) < '0' || idCard.charAt(idCard.length()-1) > '9') && idCard.charAt(idCard.length()-1) != 'X') return false;
+        return true;
+    }
+}
+
+```
+
+＿φ(．．*)：
+
+反复出现的`(idCard.charAt(i)`还是赋值给一个变量去判断更美观
+
+### 统计词语出现个数
+
+> 作业题目8
+>
+> 在String类的API中，有如下两个方法：
+>
+> ```java
+> // 查找参数字符串str在调用方法的字符串中第一次出现的索引，如果不存在，返回-1
+> public int indexOf(String str)
+> 
+> // 截取字符串，从索引beginIndex（包含）开始到字符串的结尾
+> public String substring(int beginIndex)
+> ```
+>
+> 请仔细阅读API中这两个方法的解释，完成如下需求。
+>
+> 现有如下文本：“Java语言是面向对象的，Java语言是健壮的，Java语言是安全的，Java是高性能的，Java语言是跨平台的”。请编写程序，统计该文本中"Java"一词出现的次数。
+
+自行作答：√
+
+```java
+package com.itheima.test;
+
+/**
+ * 在String类的API中，有如下两个方法：
+ *
+ * // 查找参数字符串str在调用方法的字符串中第一次出现的索引，如果不存在，返回-1
+ * public int indexOf(String str)
+ *
+ * // 截取字符串，从索引beginIndex（包含）开始到字符串的结尾
+ * public String substring(int beginIndex)
+ * 请仔细阅读API中这两个方法的解释，完成如下需求。
+ *
+ * 现有如下文本：“Java语言是面向对象的，Java语言是健壮的，Java语言是安全的，Java是高性能的，Java语言是跨平台的”。请编写程序，统计该文本中"Java"一词出现的次数。
+ */
+public class Test9 {
+    public static void main(String[] args) {
+        String str = "Java语言是面向对象的，Java语言是健壮的，Java语言是安全的，Java是高性能的，Java语言是跨平台的";
+        System.out.println(count(str, "Java"));
+        String str2 = "四是四，十是十，十四是十四，四十是四十。莫把四字说成十，休将十字说成四。若要分清四十和十四，经常练说十和四。";
+        System.out.println(count(str2, "四"));
+        System.out.println(count(str2, "十"));
+        System.out.println(count(str2, "十四"));
+        System.out.println(count(str2, "四十"));
+
+    }
+
+    public static int count(String str, String target) {
+        //非空判断
+        if (str == null || str.length() == 0 || target == null || target.length() == 0) return 0;
+
+        int count = 0;
+        while (str.indexOf(target) != -1) {
+            count++;
+            str = str.substring(str.indexOf(target) + target.length()+1);
+        }
+        return count;
+    }
+}
+
+```
+
+＿φ(．．*)：
+
+判断一个**容器（字符串，数组，集合等）**内容为空，可以用`isEmpty()`方法
+
+```java
+str.length() == 0
+|
+str.isEmpty()
+```
+
+另一种解法：来自参考答案2
+
+使用`replace()`方法替换，再计算长度差除以被查字符串长度，即可得目标个数
+
+```java
+// 替换之后求长度差
+    public static int search(String str, String tar) {
+        String newStr = str.replace(tar, "");
+        int count = (str.length() - newStr.length()) / tar.length();
+        return count;
+
+    }
+```
+
+
+
+# Day11-集合（基础）
+
+为什么要有集合？
+
+集合
+
+综合练习
+
+## 为什么要有集合
+
+- 用数组存储，在数组满的情况下，扩容比较麻烦，而集合能**自动扩容**
+
+- 数组可以存基本数据类型和引用数据类型，**集合只能存引用数据类型**
+
+  > 如果要在集合里存基本数据类型，则要存该基本数据类型对应的*包装类*
+
+## 集合（ArrayList）
+
+### ArrayList的定义
+
+```java
+public class ArrayList<E> extends AbstractList<E>
+        implements List<E>, RandomAccess, Cloneable, java.io.Serializable
+{...}
+```
+
+其中`E`代表泛型
+
+```java
+package com.heima.arraryListDemo;
+
+import java.util.ArrayList;
+
+public class ArrayListDemo1 {
+    public static void main(String[] args) {
+        //尖括号内为泛型，这里的泛型为Integer，所以list只能存储Integer类型的对象
+        //如果这里尖括号内为String，那么list只能存储String类型的对象
+        //泛型可以类比方法的参数，传入这个“类型”，只能存储这个类型的对象
+        //JDK7之前是这么写
+        ArrayList<Integer> list = new ArrayList<Integer>();
+        //JDK7之后可以这么写，后面可以省略泛型但是要保留尖括号
+        ArrayList<Integer> list2 = new ArrayList<>();
+        System.out.println(list);//[]
+        System.out.println(list2);//[]
+    }
+}
+
+```
+
+注意即使是空的集合，在打印的时候也会有左右方括号`[]`
+
+### ArrayList的成员方法
+
+增删改查
+
+| 方法名                  |      | 说明                                   |
+| ----------------------- | ---- | -------------------------------------- |
+| `boolean add(E e)`      |      | 添加元素，并返回是否成功               |
+| `boolean remove(E e)`   |      | 删除指定元素，并返回是否成功           |
+| `E remove(int index)`   |      | 删除指定索引元素，并返回被删除的元素   |
+| `E set(int index, E e)` |      | 修改指定索引下的元素，并返回原来的元素 |
+| `E get(int index)`      |      | 获取指定索引的元素                     |
+| `int size()`            |      | 集合的长度，也就是集合中元素的个数     |
+
+#### `add()`方法
+
+能添加：
+
+- 任意与集合泛型类型匹配的任何对象
+- 任意与集合泛型类型匹配的自动装箱后的基本类型
+- null（通常允许）
+
+```java
+package com.heima.arraryListDemo;
+
+import java.util.ArrayList;
+
+public class ArrayListDemo2 {
+    public static void main(String[] args) {
+        ArrayList<String> list = new ArrayList<>();
+		
+        //匹配的对象
+        boolean isSuccess = list.add("hello");
+        System.out.println(isSuccess);//true
+		//null
+        boolean isSuccess2 = list.add(null);
+        System.out.println(isSuccess2);//true
+
+        System.out.println(list);//[hello, null]
+
+
+    }
+}
+
+```
+
+接下来这里用`ArrayList<Intrger>`补充演示一下能添加自动装箱的基本数据类型
+
+```java
+package com.heima.arraryListDemo;
+
+import java.util.ArrayList;
+
+public class ArrayListDemo2_1 {
+    public static void main(String[] args) {
+        ArrayList<Integer> list = new ArrayList<>();
+
+        Integer i = 100;
+        boolean isSuccess = list.add(i);
+        System.out.println(isSuccess);//true
+
+        isSuccess = list.add(100);
+        System.out.println(isSuccess);//true
+
+        isSuccess = list.add(null);
+        System.out.println(isSuccess);//true
+
+        System.out.println(list);//[100, 100, null]
+        
+    }
+}
+
+```
 
 
 
 
 
+#### `remove()`方法
+
+```java
+package com.heima.arraryListDemo;
+
+import java.util.ArrayList;
+
+public class ArrayListDemo2_2 {
+    public static void main(String[] args) {
+        ArrayList<String> list = new ArrayList<>();
+
+        list.add("aaa");
+        list.add("bbb");
+        list.add("bbb");
+        list.add("ccc");
+
+        System.out.println(list);
+        //删除指定元素
+        boolean isSuccess = list.remove("bbb");
+        System.out.println(isSuccess);
+        System.out.println(list);
+        //删除不存在的元素，返回false
+        isSuccess = list.remove("ddd");
+        System.out.println(isSuccess);
+        System.out.println(list);
+        //删除指定索引的元素，返回被删除的元素
+        String removeElement = list.remove(0);
+        System.out.println(removeElement);
+        System.out.println(list);
+
+    }
+}
+
+```
 
 
 
+#### `set()`方法
+
+```java
+package com.heima.arraryListDemo;
+
+import java.util.ArrayList;
+
+public class ArrayListDemo2_3 {
+    public static void main(String[] args) {
+        ArrayList<String> list = new ArrayList<>();
+
+        list.add("aaa");
+        list.add("bbb");
+        list.add("bbb");
+        list.add("ccc");
+
+        System.out.println(list);
+        //修改元素
+        String oldElement = list.set(0, "AAA");
+        System.out.println(oldElement);
+        System.out.println(list);
+
+    }
+}
+
+```
 
 
 
+#### `get()`方法
+
+```java
+package com.heima.arraryListDemo;
+
+import java.util.ArrayList;
+
+public class ArrayListDemo2_4 {
+    public static void main(String[] args) {
+        ArrayList<String> list = new ArrayList<>();
+
+        list.add("aaa");
+        list.add("bbb");
+        list.add("bbb");
+        list.add("ccc");
+
+        System.out.println(list.get(1));
+    }
+}
+
+```
+
+
+
+JDK21+中，补充了`getFirst()`和`getLast()`方法，分别获取第一个和最后一个元素
+
+#### `size()`方法
+
+```java
+package com.heima.arraryListDemo;
+
+import java.util.ArrayList;
+
+public class ArrayListDemo2_5 {
+    public static void main(String[] args) {
+        ArrayList<String> list = new ArrayList<>();
+
+        list.add("aaa");
+        list.add("bbb");
+        list.add("bbb");
+        list.add("ccc");
+
+        System.out.println(list.size());
+    }
+}
+
+```
+
+
+
+## 综合练习
+
+### 集合的遍历
+
+基础练习，就是看看怎么遍历
+
+![image-20260714195010057](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260714195010057.png)
+
+```java
+package com.heima.test;
+
+import java.util.ArrayList;
+
+/**
+ * 集合的遍历方式
+ * 需求:定义一个集合，添加字符串，并进行遍历遍历格式参照:[元素1元素2，元素3]。
+ */
+public class Test1 {
+    static void main(String[] args) {
+        ArrayList<String> list = new ArrayList<>();
+
+        list.add("aaa");
+        list.add("bbb");
+        list.add("ccc");
+
+        System.out.print("[");
+        for (int i = 0; i < list.size(); i++) {
+            if(i==list.size()-1){
+                System.out.print(list.get(i)+"]");
+            }else{
+                System.out.print(list.get(i)+",");
+            }
+        }
+    }
+}
+
+```
+
+
+
+### 集合中添加数字和字符
+
+主要是讲包装类
+
+```java
+package com.heima.test;
+
+import java.util.ArrayList;
+
+public class Test2 {
+    public static void main(String[] args) {
+        ArrayList<Integer> list = new ArrayList<>();
+
+        list.add(100);
+        list.add(200);
+        list.add(300);
+
+        System.out.print("[");
+        for (int i = 0; i < list.size(); i++) {
+            if(i==list.size()-1){
+                System.out.print(list.get(i)+"]");
+            }else{
+                System.out.print(list.get(i)+",");
+            }
+        }
+    }
+}
+
+```
+
+```java
+package com.heima.test;
+
+import java.util.ArrayList;
+
+public class Test3 {
+    public static void main(String[] args) {
+        ArrayList<Character> list = new ArrayList<>();
+
+        list.add('a');
+        list.add('b');
+        list.add('c');
+
+        System.out.print("[");
+        for (int i = 0; i < list.size(); i++) {
+            if(i==list.size()-1){
+                System.out.print(list.get(i)+"]");
+            }else{
+                System.out.print(list.get(i)+",");
+            }
+        }
+    }
+}
+
+```
+
+
+
+#### 基本数据类型及其对应的包装类
+
+| 基本类型      | 包装类          | 默认值（基本/包装） |
+| :------------ | :-------------- | :------------------ |
+| **`byte`**    | **`Byte`**      | `0` / `null`        |
+| **`short`**   | **`Short`**     | `0` / `null`        |
+| **`int`**     | **`Integer`**   | `0` / `null`        |
+| **`long`**    | **`Long`**      | `0L` / `null`       |
+| **`float`**   | **`Float`**     | `0.0f` / `null`     |
+| **`double`**  | **`Double`**    | `0.0d` / `null`     |
+| **`char`**    | **`Character`** | `'\u0000'` / `null` |
+| **`boolean`** | **`Boolean`**   | `false` / `null`    |
+
+
+
+### 添加学生对象并遍历
+
+![image-20260714200536455](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260714200536455.png)
+
+```java
+package com.heima.test;
+
+public class Student {
+    private String name;
+    private int age;
+
+    public Student() {
+    }
+
+    public Student(String name, int age) {
+        this.name = name;
+        this.age = age;
+    }
+
+    /**
+     * 获取
+     * @return name
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * 设置
+     * @param name
+     */
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    /**
+     * 获取
+     * @return age
+     */
+    public int getAge() {
+        return age;
+    }
+
+    /**
+     * 设置
+     * @param age
+     */
+    public void setAge(int age) {
+        this.age = age;
+    }
+
+    public String toString() {
+        return "Student{name = " + name + ", age = " + age + "}";
+    }
+}
+
+```
+
+**这里在`Student`类中重写了`Object`（所有类的父类）的`toString()`方法**
+
+```java
+package com.heima.test;
+
+import java.util.ArrayList;
+
+public class Test4 {
+    public static void main(String[] args) {
+        ArrayList<Student> list = new ArrayList<>();
+
+        list.add(new Student("张三", 18));
+        list.add(new Student("李四", 19));
+        list.add(new Student("王五", 20));
+
+        System.out.print("[");
+        for (int i = 0; i < list.size(); i++) {
+            if(i==list.size()-1){
+                System.out.print(list.get(i)+"]");
+            }else{
+                System.out.print(list.get(i)+",");
+            }
+        }
+    }
+}
+
+```
+
+------
+
+进一步，把对象信息改成键盘录入
+
+```java
+package com.heima.test;
+
+import java.util.ArrayList;
+import java.util.Scanner;
+
+public class Test5 {
+    public static void main(String[] args) {
+        ArrayList<Student> list = new ArrayList<>();
+
+        Scanner sc = new Scanner(System.in);
+
+
+        for (int i = 0; i < 3; i++) {
+            System.out.println("请输入第"+(i+1)+"个学生的姓名和年龄");
+            String name = sc.next();
+            int age = sc.nextInt();
+            list.add(new Student(name, age));
+        }
+
+        System.out.print("[");
+        for (int i = 0; i < list.size(); i++) {
+            if(i==list.size()-1){
+                System.out.print(list.get(i)+"]");
+            }else{
+                System.out.print(list.get(i)+",");
+            }
+        }
+    }
+}
+
+```
+
+
+
+### 添加用户对象并判断是否存在
+
+![image-20260714201748554](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260714201748554.png)
+
+```java
+package com.heima.test;
+
+import java.util.ArrayList;
+
+/**
+ * 添加用户对象并判断是否存在
+ * 需求:
+ * 1，main方法中定义一个集合，存入三个用户对象。
+ * 用户属性为:id,username,password
+ * 2，要求:定义一个方法，根据id查找对应的用户信息。
+ * 如果存在，返回true
+ * 如果不存在，返回false
+ */
+public class Test6 {
+    static void main(String[] args) {
+        ArrayList<User> list = new ArrayList<>();
+        list.add(new User("1", "张三", "123456"));
+        list.add(new User("2", "李四", "654321"));
+        list.add(new User("3", "王五", "123456"));
+
+        System.out.println(findUserById(list, "1"));
+        System.out.println(findUserById(list, "2"));
+        System.out.println(findUserById(list, "3"));
+        System.out.println(findUserById(list, "4"));
+    }
+
+    public static boolean findUserById(ArrayList<User> list, String id){
+        for (int i = 0; i < list.size(); i++) {
+            String uid = list.get(i).getId();
+            if(uid.equals(id)){
+                System.out.println("用户存在");
+                System.out.println(list.get(i));
+                return true;
+            }
+        }
+        System.out.println("用户不存在");
+        return false;
+    }
+}
+
+```
+
+＿φ(．．*)：
+
+1. 过长的调用不便于阅读，还是定义一个变量更好
+
+   ```java
+   String uid = list.get(i).getId();
+               if(uid.equals(id)){...}
+   ```
+
+2. `id`还是用`String`比较好
+
+
+
+------
+
+进一步查找：找到返回其索引值，未找到返回-1
+
+```java
+package com.heima.test;
+
+import java.util.ArrayList;
+
+/**
+ * 添加用户对象并判断是否存在
+ * 需求:
+ * 1，main方法中定义一个集合，存入三个用户对象。
+ * 用户属性为:id,username,password
+ * 2，要求:定义一个方法，根据id查找对应的用户信息。
+ * 进一步查找：找到返回其索引值，未找到返回-1
+ */
+public class Test7 {
+    static void main(String[] args) {
+        ArrayList<User> list = new ArrayList<>();
+        list.add(new User("001", "张三", "123456"));
+        list.add(new User("002", "李四", "654321"));
+        list.add(new User("003", "王五", "123456"));
+
+        System.out.println(getIndex(list, "001"));
+        System.out.println(getIndex(list, "002"));
+        System.out.println(getIndex(list, "003"));
+        System.out.println(getIndex(list, "004"));
+    }
+
+    public static int getIndex(ArrayList<User> list, String id){
+        for (int i = 0; i < list.size(); i++) {
+            String uid = list.get(i).getId();
+            if(uid.equals(id)){
+                System.out.println("用户存在");
+                System.out.println(list.get(i));
+//                return i;
+                return list.indexOf(list.get(i));
+            }
+        }
+        System.out.println("用户不存在");
+        return -1;
+    }
+}
+
+```
+
+＿φ(．．*)：
+
+这两题的逻辑重复，可以实行代码复用，
+
+```java
+public static boolean findUserById(ArrayList<User> list, String id){
+        return getIndex(list, id) != -1;
+    }
+```
+
+
+
+### 添加手机对象并返回要求的数据
+
+![image-20260714203548596](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260714203548596.png)
+
+```java
+package com.heima.test;
+
+import java.util.ArrayList;
+
+/**
+ * 添加手机对象并返回要求的数据
+ * 需求:
+ * 定义Javabean类:Phone
+ * Phone属性:品牌，价格。
+ * main方法中定义一个集合，存入三个手机对象。
+ * 分别为:小米，1000。苹果，8000。锤子2999。
+ * 定义一个方法，将价格低于3000的手机信息返回。
+ */
+public class Test8 {
+    static void main(String[] args) {
+        ArrayList<Phone> list = new ArrayList<>();
+        list.add(new Phone("小米", 1000));
+        list.add(new Phone("苹果", 8000));
+        list.add(new Phone("锤子", 2999));
+
+        ArrayList<Phone> resultList = getPriceBelow3000(list);
+        System.out.println(resultList);
+    }
+
+    public static ArrayList<Phone> getPriceBelow3000(ArrayList<Phone> list){
+        if(list.isEmpty()){
+            System.out.println("集合为空");
+            return null;
+        }
+
+        ArrayList<Phone> resultList = new ArrayList<>();
+
+        for (int i = 0; i < list.size(); i++) {
+            Phone phone = list.get(i);
+            if(phone.getPrice() < 3000){
+                resultList.add(phone);
+            }
+        }
+        return resultList;
+    }
+
+}
+
+```
 
