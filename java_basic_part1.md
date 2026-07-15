@@ -3665,3 +3665,345 @@ public class Test8 {
 
 ```
 
+
+
+# Day11-学生管理系统
+
+## 需求分析
+
+[学生管理系统的需求文档](./学生管理系统的需求文档.md)
+
+## 具体代码
+
+```java
+package com.heima.studentSystem;
+
+import java.util.ArrayList;
+import java.util.Scanner;
+
+public class StudentSystem {
+    static void main(String[] args) {
+        ArrayList<Student> list = new ArrayList<>();
+        Scanner sc = new Scanner(System.in);
+        // 选择这里建议使用String类型接收用户输入，因为用户输入的可能是数字也可能是字母，甚至其他符号空格
+        //使用int的话直接报错
+        String choice = "";
+        loop:
+        while (!choice.equals("5")) {
+            System.out.println("-------------欢迎来到黑马学生管理系统----------------");
+            System.out.println("1：添加学生");
+            System.out.println("2：删除学生");
+            System.out.println("3：修改学生");
+            System.out.println("4：查询学生");
+            System.out.println("5：退出");
+            System.out.println("请输入您的选择:");
+            choice = sc.next();
+
+            switch (choice) {
+                case "1" -> addStudent(list);
+                case "2" -> deleteStudent(list);
+                case "3" -> setStudent(list);
+                case "4" -> getStudent(list);
+                case "5" ->{
+                    System.out.println("退出系统");
+                    break loop;
+//                    System.exit(0);//停止虚拟机
+                }
+                default ->System.out.println("输入有误，请重新输入");
+            }
+        }
+    }
+
+    public static void addStudent(ArrayList<Student> list) {
+        Scanner sc = new Scanner(System.in);
+        System.out.println("添加学生");
+        System.out.println("请输入学生信息:");
+
+        String id;
+        while (true) {
+            System.out.println("请输入学生ID:");
+            id = sc.next();
+            if(!checkIdValid(list,id)){
+                System.out.println("id已存在，请重新输入");
+                continue;
+            }
+            break;
+        }
+        System.out.println("请输入学生姓名:");
+        String name = sc.next();
+        System.out.println("请输入学生年龄:");
+        String age = sc.next();
+        System.out.println("请输入学生地址:");
+        String address = sc.next();
+        Student student = new Student(id, name, age, address);
+        list.add(student);
+        System.out.println("添加学生成功");
+        System.out.println(student);
+    }
+
+    public static void deleteStudent(ArrayList<Student> list) {
+        Scanner sc = new Scanner(System.in);
+        System.out.println("删除学生");
+        System.out.println("请输入要删除的学生ID:");
+        String deleteId = sc.next();
+//        for (int i = 0; i < list.size(); i++) {
+//            if (list.get(i).getId().equals(deleteId)) {
+//                list.remove(i);
+//                System.out.println("删除成功");
+//                return;
+//            }
+//        }
+        int index = getIndex(list,deleteId);
+        if(index != -1){
+            list.remove(index);
+            System.out.println("id为："+deleteId+"的学生删除成功");
+            return;
+        }
+        System.out.println("未找到id为："+deleteId+"的学生");
+        System.out.println("删除失败");
+    }
+
+    public static  void setStudent(ArrayList<Student> list) {
+        Scanner sc = new Scanner(System.in);
+        System.out.println("修改学生");
+        System.out.println("请输入要修改的学生id：");
+        String id = sc.next();
+//        for (int i = 0; i < list.size(); i++) {
+//            Student modifyStudent = list.get(i);
+//            if (modifyStudent.getId().equals(modifyId)) {
+//                System.out.println("请输入修改后的学生信息：");
+//                String modifyId2;
+//                while (true) {
+//                    System.out.println("请输入学生id：");
+//                    modifyId2 = sc.next();
+//                    if(!checkIdValid(list,modifyId2)){
+//                        System.out.println("id已存在，请重新输入");
+//                        continue;
+//                    }
+//                    break;
+//                }
+//                System.out.println("请输入学生姓名：");
+//                String modifyName = sc.next();
+//                System.out.println("请输入学生年龄：");
+//                String modifyAge = sc.next();
+//                System.out.println("请输入学生地址：");
+//                String modifyAddress = sc.next();
+//
+//                Student modifyStudent2 = new Student(modifyId2, modifyName, modifyAge, modifyAddress);
+//                int index = getIndex(list,modifyId2);
+//                list.set(index, modifyStudent2);
+//                System.out.println("修改成功");
+//                System.out.println(modifyStudent2);
+//                return;
+//            }
+//        }
+        int index = getIndex(list, id);
+        if(index == -1){
+            System.out.println("未找到id为："+id+"的学生");
+            System.out.println("修改失败");
+            return;
+        }
+        System.out.println("请输入修改后的学生信息：");
+        String modifyId;
+        while (true) {
+            System.out.println("请输入修改后的学生id：");
+            modifyId = sc.next();
+            if(!checkIdValid(list,modifyId)){
+                System.out.println("id已存在，请重新输入");
+                continue;
+            }
+            break;
+        }
+
+        System.out.println("请输入修改后的学生姓名：");
+        String modifyName = sc.next();
+        System.out.println("请输入修改后的学生年龄：");
+        String modifyAge = sc.next();
+        System.out.println("请输入修改后的学生地址：");
+        String modifyAddress = sc.next();
+
+        Student modifyStudent = new Student(modifyId, modifyName, modifyAge, modifyAddress);
+
+        list.set(index, modifyStudent);
+        System.out.println("修改成功");
+        System.out.println(modifyStudent);
+
+    }
+
+    public static void getStudent(ArrayList<Student> list) {
+        if(list.isEmpty()) {
+            System.out.println("当前无学生信息，请添加后再查询");
+            return;
+        }
+        System.out.println("查询学生");
+        System.out.println("id--------姓名-------年龄--------家庭地址");
+        for (int i = 0; i < list.size(); i++) {
+            Student studentShow = list.get(i);
+            if(studentShow == null){
+                continue;
+            }
+            System.out.println(studentShow.getId()+"\t"+studentShow.getName()+"\t"+studentShow.getAge()+"\t"+studentShow.getAddress());
+        }
+    }
+
+    //id唯一判断
+    public static boolean checkIdValid(ArrayList<Student> list,String id) {
+        //提高代码复用性
+//        if(list.isEmpty()) {
+//            return true;
+//        }
+//        for (int i = 0; i < list.size(); i++) {
+//            if (list.get(i).getId().equals(id)) {
+//                return false;
+//            }
+//        }
+//        return true;
+        int result = getIndex(list,id);
+        return result == -1;
+    }
+
+    //通过id获取index
+    public static int getIndex(ArrayList<Student> list,String id) {
+        for (int i = 0; i < list.size(); i++) {
+            Student student = list.get(i);
+            if (student.getId().equals(id)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+}
+
+```
+
+
+
+＿φ(．．*)
+
+1. 接收键盘输入时，建议使用`String`，因为如果使用`int`，在用户输入非数字（英语字母、标点符号、空格等）情况下，代码容易报错
+
+   ```java
+   String choice = "";
+   ```
+
+2. `main()`方法中的`switch`，不要直接在`case`中写业务逻辑，包装在方法中再进行调用
+
+   ```java
+    switch (choice) {
+                   case "1" -> addStudent(list);
+                   case "2" -> deleteStudent(list);
+                   case "3" -> setStudent(list);
+                   case "4" -> getStudent(list);
+                   case "5" ->{
+                       System.out.println("退出系统");
+                       break loop;
+   //                    System.exit(0);//停止虚拟机
+                   }
+                   default ->System.out.println("输入有误，请重新输入");
+               }
+   ```
+
+   
+
+   1. 停止虚拟机只在严重错误或者图形界面程序需要退出的地方才设置
+
+3. 给代码块（通常是多层循环）打标签；便于一次性跳出多层循环/判断
+
+   > 这里在`main`的`while`循环中有使用
+
+   ```java
+   outer:  // 标签放在最外层
+   for (int i = 0; i < 10; i++) {
+       for (int j = 0; j < 10; j++) {
+           for (int k = 0; k < 10; k++) {
+               if (k == 5) {
+                   break outer; // 这一句会瞬间跳出最外层的 for 循环，程序直接跑到 System.out.println("结束")；
+               }
+           }
+       }
+   }
+   System.out.println("结束");
+   ```
+
+4. 在书写方法时，要注意有没有逻辑复用，有则可以抽离出来写一个新方法再调用，提高代码复用
+
+   > 此处方法内注释的部分就是原先没有复用时的冗长反复的代码
+
+## 作业
+
+没啥好说的，和练习差不多
+
+
+
+# Day12-学生管理系统升级
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
