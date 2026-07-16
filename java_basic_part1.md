@@ -2798,7 +2798,17 @@ public class Test4 {
         }
 ```
 
-＿φ(．．*)：temp
+＿φ(．．*)：
+
+1. temp中间变量的打乱方式
+
+2. int转char的方法
+
+   ```java
+   (char) (random.nextInt(10) + '0')
+   ```
+
+   
 
 ### 统计英文和数字个数
 
@@ -2924,7 +2934,10 @@ public class Test7 {
 
 ＿φ(．．*)：
 
-反复出现的`(idCard.charAt(i)`还是赋值给一个变量去判断更美观
+反复出现的`(idCard.charAt(i)`还是赋值给一个变量去判断更好
+
+- 不赋值就会反复调用同一个方法，效率低
+- 而且可读性比较差
 
 ### 统计词语出现个数
 
@@ -3075,8 +3088,10 @@ public class ArrayListDemo1 {
 | `boolean remove(E e)`   |      | 删除指定元素，并返回是否成功           |
 | `E remove(int index)`   |      | 删除指定索引元素，并返回被删除的元素   |
 | `E set(int index, E e)` |      | 修改指定索引下的元素，并返回原来的元素 |
-| `E get(int index)`      |      | 获取指定索引的元素                     |
+| `E get(int index)`      |      | 获取指定索引的元素，返回的是引用       |
 | `int size()`            |      | 集合的长度，也就是集合中元素的个数     |
+
+<a id="get()"></a>
 
 #### `add()`方法
 
@@ -3929,6 +3944,14 @@ public class StudentSystem {
 
    > 此处方法内注释的部分就是原先没有复用时的冗长反复的代码
 
+5. 一般使用`if`分支先分出代码量小的分支
+
+   ```
+   if(index == -1)
+   ```
+
+   
+
 ## 作业
 
 没啥好说的，和练习差不多
@@ -3937,6 +3960,398 @@ public class StudentSystem {
 
 # Day12-学生管理系统升级
 
+## 需求文档
+
+[需求文档升级版](./学生管理系统升级版的需求文档.md)
+
+## 代码
+
+```java
+package com.heima.studentSystem;
+
+import java.util.ArrayList;
+import java.util.Random;
+import java.util.Scanner;
+
+public class App {
+    static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        ArrayList<User> list = new ArrayList<>();
+        list.add(new User("user1", "123456", "123456200101011111", "13800000001"));
+        list.add(new User("user2", "123456", "123456200202022222", "13800000002"));
+        list.add(new User("user3", "123456", "123456200303033333", "13800000003"));
+
+        String choice = "";
+        while (!choice.equals("exit")) {
+            System.out.println("欢迎来到学生管理系统");
+            System.out.println("请选择操作1登录 2注册 3忘记密码");
+            choice = sc.nextLine();
+            switch (choice) {
+                case "1" -> login(list);
+                case "2" -> register(list);
+                case "3" -> forgetPassword(list);
+                case "exit" -> System.out.println("谢谢使用，再见！");
+                default -> System.out.println("输入错误，请重新输入！");
+            }
+        }
+    }
+
+    // 登录
+    private static void login(ArrayList<User> list) {
+        Scanner sc = new Scanner(System.in);
+        for (int i = 0; i < 3; i++) {
+            // 1. 输入用户名
+            System.out.println("请输入用户名");
+            String name = sc.nextLine();
+            int index = findUser(list, name);
+            if (index == -1) {
+                System.out.println("用户名不存在，请先注册！");
+                return;
+            }
+            // 2. 输入密码
+            System.out.println("请输入密码");
+            String password = sc.nextLine();
+            // 3. 输入验证码
+            String code = generateCode();
+            while (true) {
+                System.out.println("验证码为：" + code);
+                System.out.println("请输入验证码");
+                String inputCode = sc.nextLine();
+                if (!inputCode.equals(code)) {
+                    System.out.println("验证码错误");
+                    continue;
+                }
+                System.out.println("验证码正确");
+                break;
+            }
+
+            if (!list.get(index).getPassword().equals(password)) {
+
+                System.out.println("密码错误");
+                System.out.println("还有" + (2 - i) + "次机会");
+                continue;
+            }
+            System.out.println("登录成功");
+            System.out.println("欢迎用户：" + list.get(index).getName());
+            // 4. 启动学生管理系统
+            StudentSystem ss = new StudentSystem();
+            ss.startStudentSystem();
+            return;
+        }
+        System.out.println("3次密码均错误，登录失败");
+    }
+
+    // 注册
+    private static void register(ArrayList<User> list) {
+        Scanner sc = new Scanner(System.in);
+        String name = "";
+        String password = "";
+        String id = "";
+        String phone = "";
+        int index;
+        while (true) {
+            System.out.println("请输入用户名");
+            name = sc.nextLine();
+            index = findUser(list, name);
+            if (index != -1) {
+                System.out.println("用户名已存在，请重新输入！");
+                continue;
+            }
+
+            if (!validateName(name)) {
+                System.out.println("用户名格式错误，请重新输入！");
+                continue;
+            }
+            break;
+        }
+        System.out.println("用户名：" + name+"可用");
+        while (true) {
+            System.out.println("请输入密码");
+            String password1 = sc.nextLine();
+            System.out.println("请确认密码");
+            String password2 = sc.nextLine();
+            if (!password1.equals(password2)) {
+                System.out.println("两次密码不一致，请重新输入！");
+                continue;
+            }
+            password = password1;
+            break;
+        }
+
+
+        while (true) {
+            System.out.println("请输入身份证号");
+            id = sc.nextLine();
+            if (!validateIdCard(id)) {
+                System.out.println("身份证号格式错误，请重新输入！");
+                continue;
+            }
+            break;
+        }
+
+        while (true) {
+            System.out.println("请输入手机号");
+            phone = sc.nextLine();
+            if (!validatePhone(phone)) {
+                System.out.println("手机号格式错误，请重新输入！");
+                continue;
+            }
+            break;
+        }
+        User user = new User(name, password, id, phone);
+        list.add(user);
+        System.out.println("注册成功");
+        System.out.println(user);
+
+
+    }
+
+    // 忘记密码
+    private static void forgetPassword(ArrayList<User> list) {
+        Scanner sc = new Scanner(System.in);
+        String name;
+        String id;
+        String phone;
+        int index;
+        while (true) {
+            System.out.println("请输入用户名");
+            name = sc.nextLine();
+            index = findUser(list, name);
+            if (index == -1) {
+                System.out.println("用户名不存在，请先注册！");
+                continue;
+            }
+            break;
+        }
+        User user = list.get(index);
+        while (true) {
+            System.out.println("请输入身份证号");
+            id = sc.nextLine();
+            System.out.println("请输入手机号");
+            phone = sc.nextLine();
+            if (!validateIdCard(id) || !validatePhone(phone)) {
+                System.out.println("身份证号或手机号格式错误，请重新输入！");
+                continue;
+            }
+
+            //注意身份证最后一位不区分大小写
+            if (!user.getId().equalsIgnoreCase(id) || !user.getPhone().equals(phone)) {
+                System.out.println("身份证号或手机号错误，账号信息不匹配，请重新输入！");
+                continue;
+            }
+            break;
+        }
+
+        //新密码也要两次确认一致才能重置
+        String password;
+        while (true) {
+            System.out.println("请输入新密码");
+            password = sc.nextLine();
+            System.out.println("请确认新密码");
+            String password2 = sc.nextLine();
+            if (!password.equals(password2)) {
+                System.out.println("两次密码不一致，请重新输入！");
+                continue;
+            }
+            break;
+        }
+        user.setPassword(password);
+        System.out.println("用户" + user.getName() + "密码重置成功");
+
+    }
+
+
+    //打印集合
+//    private static void printList(ArrayList<User> list) {
+//        for (User user : list) {
+//            System.out.println(user);
+//        }
+//    }
+
+    //查找用户
+    private static int findUser(ArrayList<User> list, String name) {
+        for (int i = 0; i < list.size(); i++) {
+            if (list.get(i).getName().equals(name)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    //生成验证码
+    private static String generateCode() {
+        Random random = new Random();
+        char[] code = new char[5];
+        char[] alphabet = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'};
+
+        code[0] = (char) (random.nextInt(10) + '0');
+        for (int i = 1; i < 5; i++) {
+            code[i] = alphabet[random.nextInt(alphabet.length)];
+        }
+
+        for (int i = 0; i < 5; i++) {
+            int index = random.nextInt(5);
+            char temp = code[i];
+            code[i] = code[index];
+            code[index] = temp;
+        }
+        return new String(code);
+
+    }
+
+    //生成验证码的另一种方法
+    private static String generateCode1() {
+        //创建字母表集合
+        ArrayList<Character> list = new ArrayList<>();
+        for (int i = 0; i < 26; i++) {
+            list.add((char) (i + 'a'));
+            list.add((char) (i + 'A'));
+        }
+        Random random = new Random();
+        char[] code = new char[5];
+        code[0] = (char) (random.nextInt(10) + '0');
+        for (int i = 1; i < 5; i++) {
+            code[i] = list.get(random.nextInt(list.size()));
+        }
+
+        //由于字母也是随机的，所以要打乱验证码，只需要打乱数字的位置就可以了
+        char temp = code[0];
+        int index = random.nextInt(5);
+        code[0] = code[index];
+        code[index] = temp;
+
+
+        return new String(code);
+    }
+
+    //验证手机号
+    private static boolean validatePhone(String phone) {
+        return phone.matches("[1-9]+[0-9]{10}");
+    }
+    private static boolean validateIdCard(String id) {
+        return id.matches("[1-9]+[0-9]{16}[0-9Xx]");
+    }
+    public static boolean validateName(String name) {
+        return name.matches("(?=.*[a-zA-Z])[a-zA-Z0-9]{3,15}");
+    }
+
+}
+
+```
+
+＿φ(．．*)
+
+### 正则表达式
+
+1. [a-zA-Z0-9#]：表是英文字母，数字，或者井号
+2. [0-9]+：至少出现一次
+3. [0-9]{3,15}出现3到15次
+
+### 关于`get()`方法的赋值
+
+**`Student s = list.get(index)` 这里的s就是列表中的元素的引用**
+
+> 方法返回的都是堆中的数据
+>
+> - 基本数据类型由于其内存储的值就是本身，所以在返回（给新变量）的时候，是相当于新创建（复制）了一个相同值的变量
+>
+> - 引用数据类型由于其内存储的值是其引用，也就是地址值，所以在返回（给新变量）的时候，没有发生新创建一个对象的过程
+>
+>   ```java
+>   Student s = list.get(index)
+>   ```
+>
+>   这里的s虽然*看似创建了一个新的对象*，但是其内部存储的是get()方法返回的、list中原先就有的元素，所有对s进行setter操作也会改变原始数据
+
+[点击查看get()方法](#get())
+
+用s改变其属性，比如
+
+```java
+s.setName("zhangsan")
+```
+
+其列表中的数据也会该改变
+
+如果想要一个全新的元素，就得使用`new`关键字或者复制函数例如`copyOf()`等
+
+### 简化随机数打乱
+
+```java
+private static String generateCode1() {
+        //创建字母表集合
+        ArrayList<Character> list = new ArrayList<>();
+        for (int i = 0; i < 26; i++) {
+            list.add((char) (i + 'a'));
+            list.add((char) (i + 'A'));
+        }
+        Random random = new Random();
+        char[] code = new char[5];
+        code[0] = (char) (random.nextInt(10) + '0');
+        for (int i = 1; i < 5; i++) {
+            code[i] = list.get(random.nextInt(list.size()));
+        }
+
+        //由于字母也是随机的，所以要打乱验证码，只需要打乱数字的位置就可以了
+        char temp = code[0];
+        int index = random.nextInt(5);
+        code[0] = code[index];
+        code[index] = temp;
+
+
+        return new String(code);
+    }
+```
+
+＿φ(．．*)
+
+1. 生成字母表的方法
+
+   ```java
+   ArrayList<Character> list = new ArrayList<>();
+           for (int i = 0; i < 26; i++) {
+               list.add((char) (i + 'a'));
+               list.add((char) (i + 'A'));
+           }
+   ```
+
+2. 关于随机打乱！
+
+   没必要再次全部打乱，由于字母和数字都是随机抽取的，那么只需要随机调整数字的文职就可以了
+
+### 跨文件调用
+
+![修改学生管理系统main()方法作为启动方法](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260716201833758.png)
+
+![在登录系统中调用学生管理系统](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260716202030931.png)
+
+# Day-13 面向对象进阶（static和继承）
+
+## static
+
+表示静态，是Java中的一个修饰符，可以修饰成员方法成员变量
+
+- 静态成员变量
+  - 特点：被该类的所有对象共享
+  - 调用方式：类名调用（推荐）or 对象名调用（语法上可以但是不合理）
+- 静态成员方法
+  - 
+
+### static的内存图
+
+#### JVM的内存
+
+所谓内存，主要说的是JVM的内存
+
+内存的逻辑构造和物理实现并不是完全对应的（名字不一样）
+
+在物理实现层面，方法区之前是有永久代实现，后来改成原空间实现
+
+> 这个改变具体是是在JDK8+之后
+>
+> 原先永久代（PermGen）实际上是堆是一部分，也就是使用JVM的堆内存，当其内容过多时，容易OOM（Out Of Memory内存溢出，不够用了）
+>
+> 而元空间（Metaspace）则不再使用JVM的堆内存，通过JVM向操作系统申请，直接使用本地内存，大幅提高了可用内存量
 
 
 
@@ -3944,14 +4359,7 @@ public class StudentSystem {
 
 
 
-
-
-
-
-
-
-
-
+静态变量是随着类的加载而加载的，优先于对象出现的
 
 
 
