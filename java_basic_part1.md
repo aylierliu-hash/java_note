@@ -4335,15 +4335,84 @@ private static String generateCode1() {
   - 特点：被该类的所有对象共享
   - 调用方式：类名调用（推荐）or 对象名调用（语法上可以但是不合理）
 - 静态成员方法
-  - 
+  - 特点
+    - 多用于测试类和工具类中
+    - JavaBean中很少使用
+
+  - 调用方法：同样推荐通过类名调用，也可以通过对象名调用但是不合理
+
+
+
 
 ### static的内存图
 
+
+
+静态变量（static）逻辑上属于方法区
+
+> 物理上是和类对象一起放在堆里了
+
+**静态变量是随着类的加载而加载的**，优先于对象出现的
+
 #### JVM的内存
+
+```mermaid
+graph TB
+    subgraph ThreadPrivate [线程私有区域<br>（每个线程独立）]
+        PC[程序计数器<br>PC Register]
+        Stack[Java虚拟机栈<br>存放栈帧/局部变量]
+        Native[本地方法栈<br>Native Method Stack]
+    end
+
+    subgraph ThreadShared [线程共享区域<br>（所有线程共用）]
+        Heap[堆内存<br>存放对象实例/数组]
+        MethodArea[方法区/元空间<br>存放类元数据/静态变量/常量池]
+    end
+
+    PC -- 指向当前执行地址 --> Stack
+    Stack -- 持有对象引用（地址）--> Heap
+    Stack -- 调用方法时指向类信息 --> MethodArea
+    Native -- 底层C/C++方法也能访问 --> Heap
+    Native -- 底层C/C++方法也能访问 --> MethodArea
+    Heap -- 对象头中记录所属类 --> MethodArea
+    MethodArea -- 类加载时建立对象结构 --> Heap
+```
+
+
 
 所谓内存，主要说的是JVM的内存
 
 内存的逻辑构造和物理实现并不是完全对应的（名字不一样）
+
+逻辑结构上，JVM包括：
+
+- **栈（Stack）**：存放方方法调用的状态（局部变量，参数，返回的地址值）
+  - 类比于施工队，用来干活，干完的任务用完就扔
+- **堆（Heap）**：存放对象实例，所有`new`出来的东西都放在这里，也就是对象的实际数据，每个存放在这里的数据都会分配到一个地址值
+  - 类似于施工队的成果，例如房子，可以放需要相对长期保存而不是用完就丢的东西
+- **方法区（Method Area）**：存放类名、方法字节码、静态变量、常量池
+  - 类似于建筑的设计图，规定了房子怎么盖（对象通过什么方法创建、具体构成是什么）怎么修改
+- **程序计数器（PC Register）**：记录当前执行到了哪一行字节码
+  - 计数器小且不出错，不用关注
+- **本地方法栈（Native Method Stack）**：为JVM调用的*Naitve方法（例如使用C/C++写的代码）*提供服务
+  - 由JVM底层管理，开发者无权管理
+
+##### 本地方法栈
+
+这里补充说明一下
+
+首先，JVM是由C/C++编写的，用来解释执行经过java编译器也就是javac编译之后的字节码文件的
+
+那么本地方法栈该怎么理解呢？可以和JVM的栈进行类比
+
+我们把要执行的Java代码和JVM一起打包当成一个要执行的程序，在执行这个程序的时候所依赖的栈就是本地方法栈
+
+|            |                                |                                                 |
+| ---------- | ------------------------------ | ----------------------------------------------- |
+| JVM栈      | 执行“Java字节码”这个虚拟指令集 | 是JVM内部运行Java程序使用的栈                   |
+| 本地方法栈 | 执行物理机机器码（CPU指令）    | 是执行“JVM和要执行的Java程序”这个整体所依赖的栈 |
+
+#### 方法区
 
 在物理实现层面，方法区之前是有永久代实现，后来改成原空间实现
 
@@ -4353,13 +4422,161 @@ private static String generateCode1() {
 >
 > 而元空间（Metaspace）则不再使用JVM的堆内存，通过JVM向操作系统申请，直接使用本地内存，大幅提高了可用内存量
 
+那么方法区中具体装着什么呢？
+
+1. 类的元数据：类名、字节码
+2. 运行时常量池
+3. 静态变量
+4. 类对象：注意不是某个类的实例对象，而是一个类的`java.lang.Class`
+
+另外感兴趣的话可以去看一下类的元数据和类对象的区别（类似于蓝图和指向蓝图的指示牌）
+
+
+
+### 工具类
+
+类可以分为三种：
+
+- `JavaBean类`：用于描述一类事物的
+- `测试类`：用来检查其他类是否正确的类，带有`main()`方法，是程序的入口
+- `工具类`：不是用来描述一类事物的，而是帮助我们做事的一类类
+
+#### 工具类的要求
+
+1. **类见名知意**：便于理解使用
+2. **私有化构造方法**：因为工具类并不用来描述任何事物，不需要也不应该有实例对象
+3. **方法定义为静态**：便于通过类名直接调用，毕竟没有实例对象
+
+#### 练习
+
+##### 定义数组工具类
+
+![练习-定义数组工具类](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260717172919280.png)
+
+```java
+package com.heima.a02staticDemo2;
+
+import java.util.Scanner;
+
+/**
+ * 定义数组工具类
+ * 需求:在实际开发中，经常会遇到一些数组使用的工具类。请按照如下要求编写一个数组的工具类:ArrayUtil
+ * 提供一个工具类方法printArr，用于返回整数数组的内容。
+ * 返回的字符串格式如:[10,20,50,34,100](只考虑整数数组，且只考虑一维数组)
+ * 提供这样一个工具方法getAerage，用于返回平均分。(只考虑浮点型数组，且只考虑一维数组)
+ * 定义一个测试类TestDemo，调用该工具类的工具方法，并返回结果。
+ */
+public class ArrayUtil {
+
+    //私有化构造方法
+    private ArrayUtil() {
+    }
+
+    //提供一个工具类方法printArr，用于返回整数数组的内容。
+    public static String printArr(int[] arr) {
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < arr.length; i++) {
+            sb.append(arr[i]);
+            if (i != arr.length - 1) {
+                sb.append(", ");
+            }
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
+    //提供这样一个工具方法getAerage，用于返回平均分。(只考虑浮点型数组，且只考虑一维数组)
+    public static double getAerage(double[] arr) {
+        double sum = 0;
+        for (int i = 0; i < arr.length; i++) {
+            sum += arr[i];
+        }
+        return sum / arr.length;
+    }
+}
+
+```
+
+
+
+```java
+package com.heima.a02staticDemo2;
+
+public class TestDemo {
+    public static void main(String[] args) {
+        int[] arr = {10, 20, 50, 34, 100};
+        System.out.println(ArrayUtil.printArr(arr));
+
+        double[] arr2 = {10.5, 20.3, 50.2, 34.1, 100.0};
+        System.out.println(ArrayUtil.getAerage(arr2));
+    }
+}
+
+```
+
+
+
+##### 定义学生工具类
+
+![定义学生工具](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260717175354668.png)
+
+```java
+package com.heima.a03staticDemo03;
+
+/**
+ * 定义学生工具类
+ * 需求:定义一个集合，用于存储3个学生对象。学生类的属性为:name、age、gender定义一个工具类，用于获取集合中最大学生的年龄。
+ */
+public class StudentUtil {
+    //私有构造方法
+    private StudentUtil() {
+
+    }
+    //提供一个工具类方法，用于获取集合中最大学生的年龄。
+    public static int getMaxAge(Student[] students) {
+        int maxAge = 0;
+        for (int i = 0; i < students.length; i++) {
+            if (students[i].getAge() > maxAge) {
+                maxAge = students[i].getAge();
+            }
+        }
+        return maxAge;
+    }
+
+}
+
+```
+
+
+
+```java
+package com.heima.a03staticDemo03;
+
+public class TestDemo {
+    static void main(String[] args) {
+        Student[] students = {
+                new Student("张三", 18, "男"),
+                new Student("李四", 20, "男"),
+                new Student("王五", 19, "男")
+        };
+        int maxAge = StudentUtil.getMaxAge(students);
+        System.out.println(maxAge);
+    }
+}
+
+```
+
+
+
+＿φ(．．*)
+
+1. 
 
 
 
 
 
 
-静态变量是随着类的加载而加载的，优先于对象出现的
 
 
 
@@ -4393,25 +4610,4 @@ private static String generateCode1() {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+.
