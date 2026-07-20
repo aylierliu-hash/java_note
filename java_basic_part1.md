@@ -874,6 +874,8 @@ public class PersonTest {
 
 > 笔者在写代码时，偶然发现 psvma 指令生成出来的 main()方法没有 public 了，故查阅资料
 
+<a id="关于main()"></a>
+
 先说结论，
 
 1. `main()` 方法也是一个方法
@@ -898,6 +900,8 @@ Java 21 引入了 未命名的类与实例 main 方法 预览特性（Java 23 �
 `main()` 方法理论上也是方法，所以也是可以传入参数的
 
 由于 `main()` 方法是程序的入口，由 JVM 直接调用，参数也由 JVM 传入
+
+不过算是一种已经过时的键盘输入方式，现在普遍使用`Scanner`进行键盘输入
 
 ------
 
@@ -4336,7 +4340,7 @@ private static String generateCode1() {
   - 调用方式：类名调用（推荐）or 对象名调用（语法上可以但是不合理）
 - 静态成员方法
   - 特点
-    - 多用于测试类和工具类中
+    - 多用于**测试类和工具类**中
     - JavaBean中很少使用
 
   - 调用方法：同样推荐通过类名调用，也可以通过对象名调用但是不合理
@@ -4448,6 +4452,8 @@ graph TB
 3. **方法定义为静态**：便于通过类名直接调用，毕竟没有实例对象
 
 #### 练习
+
+还挺新奇，以前都没写过工具类
 
 ##### 定义数组工具类
 
@@ -4566,23 +4572,178 @@ public class TestDemo {
 
 ```
 
+首先这里有一个明显的错误，就是直接用`student`类创建数组了，不合适，应当使用`ArrayList`
 
+```java
+ArrayList<Student> students = new ArrayList<>();
+        students.add(new Student("张三", 18, "男"));
+        students.add(new Student("李四", 20, "男"));
+        students.add(new Student("王五", 19, "男"));
 
-＿φ(．．*)
-
-1. 
-
-
-
-
-
-
-
-
-
+        int maxAge = StudentUtil.getMaxAge(students);
+        System.out.println(maxAge);
+```
 
 
 
+＿φ(．．*)：还是要注意适时设置变量接收反复调用的数据
+
+```java
+public static int getMaxAge(Student[] students) {
+        int maxAge = 0;
+        for (int i = 0; i < students.length; i++) {
+            if (students[i].getAge() > maxAge) {
+                maxAge = students[i].getAge();
+            }
+        }
+        return maxAge;
+    }
+```
+
+这里的`age`被反复查询，可以改为
+
+```java
+public static int getMaxAge(ArrayList<Student> students) {
+        int maxAge = 0;
+        for (int i = 0; i < students.size(); i++) {
+            int age = students.get(i).getAge();
+            if (age > maxAge) {
+                maxAge = age;
+            }
+        }
+        return maxAge;
+    }
+```
+
+
+
+### `static`的注意事项
+
+- 静态方法只能访问静态方法和静态变量
+- 非静态方法可以访问静态方法和静态变量，也可以访问非静态的成员变量和非静态的成员方法
+- 静态方法中没有this关键字
+
+![静态和非静态](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260719153332090.png)
+
+静态的东西是属于类本身的，非静态的是属于类的实例对象
+
+而this关键字是默认指向当前方法调用者的地址的，因为方法调用者在调用方法时会传入自身的地址值，不过可以省略，所以一般不写
+
+#### 代码体现
+
+![this是调用者的地址值](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260719225631755.png)
+
+#### 内存的角度
+
+静态的东西是属于类的，是随着类的加载而加载
+
+非静态的东西是属于对象的，在没有创建的时候是没有加载的
+
+
+
+由于加载的时机不同，静态一般都在非静态之前加载，所以静态压根找不到非静态，而非静态能找到静态的
+
+------
+
+这里补充一个容易忽略的事实，那就是**`main()`方法也是静态的**，而且是属于其所在类的
+
+所以，在`main()`方法中，不能直接调用非静态的方法，要通过对应的实例对象进行调用
+
+```java
+public class Demo {
+    public void sayHello() {
+        System.out.println("Hello");
+    }
+
+    public static void main(String[] args) {
+        // ❌ 错误写法：sayHello(); // 编译报错
+        // ✅ 正确写法：
+        Demo demo = new Demo(); // 先在堆中创建实例
+        demo.sayHello();       // 通过实例调用
+    }
+}
+```
+
+
+
+不过一般在实际开发中，一般不让`main()`“背负太多业务逻辑”，只作为启动按钮
+
+```java
+public class Application {
+    // 业务非静态方法
+    public void run() {
+        System.out.println("应用启动了");
+    }
+
+    // 入口只用 new 一下，把控制权交给非静态环境
+    public static void main(String[] args) {
+        Application app = new Application();
+        app.run(); // 进入面向对象的世界
+    }
+}
+```
+
+[点击回顾main()方法补充知识](#关于main())
+
+
+
+## 继承（OOP三大特性2/3）
+
+先来回顾一下封装（OOP三大特性1/3）
+
+封装：对象代表什么，就得封装对应的数据，并提供数据对应的行为
+
+
+
+### 继承的定义
+
+- `extends`关键字，用来将两个类之间建立继承关系
+- 子类（派生类），基类（超类）
+
+
+
+```java
+public class Student extends Person{...}
+```
+
+
+
+两个类之间存在相同（共性）的内容，并满足子类是基类中的一种，可以考虑通过继承来优化代码
+
+
+
+子类继承基类的方法属性，同时可以改写部分方法或者进行拓展
+
+
+
+### 继承的特点
+
+Java只支持单继承，不支持多继承，但支持多层继承
+
+> 这点和C++不同，后者可以多继承
+
+
+
+不过在Java中，继承向上是有终点的，**任何一个类的直接或者间接继承于`Object`**
+
+> JVM在运行的时候会默认给没有设置基类的类设置`Object`为其基类
+
+#### 小练习
+
+![小练习](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260720212442260.png)
+
+一个类能调用的方法（变量）：
+
+- 自身的成员方法
+- 继承而来的方法，要求是基类的非私有方法
+  - 显示继承的基类方法
+  - 注意还有`Object`
+
+![一个类可以调用的方法](https://cdn.jsdelivr.net/gh/aylierliu-hash/image_hosting/images/image-20260720213705729.png)
+
+
+
+### 子类继承到的内容
 
 
 
@@ -4610,4 +4771,5 @@ public class TestDemo {
 
 
 
-.
+
+
